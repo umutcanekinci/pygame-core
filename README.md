@@ -1,4 +1,4 @@
-# game_core
+# pygame_core
 
 Shared pygame utilities used across personal game projects (2048-idle-evolution, terraria, tower-defense).
 
@@ -7,18 +7,18 @@ Shared pygame utilities used across personal game projects (2048-idle-evolution,
 From the `PycharmProjects` root, install once in editable mode:
 
 ```bash
-pip install -e ./game_core
+pip install -e ./pygame_core
 ```
 
-Editable mode means any change you make inside `game_core/` is immediately available in all games — no reinstall needed.
+Editable mode means any change you make inside `pygame_core/` is immediately available in all games — no reinstall needed.
 
 ## Modules
 
-### `game_core.color`
+### `pygame_core.color`
 Common color constants as RGB tuples.
 
 ```python
-from game_core.color import *
+from pygame_core.color import *
 
 # Available: Black, White, Red, Lime, Blue, Yellow, Cyan, Magenta,
 #            Silver, Gray, Maroon, Olive, Green, Purple, Teal, Navy, CustomBlue
@@ -26,11 +26,11 @@ from game_core.color import *
 
 ---
 
-### `game_core.path`
+### `pygame_core.path`
 Path helper classes that resolve asset paths relative to the game's working directory.
 
 ```python
-from game_core.path import ImagePath, FontPath, SoundPath, FilePath
+from pygame_core.path import ImagePath, FontPath, SoundPath, FilePath
 
 img   = ImagePath("player")           # → <cwd>/images/player.png
 img   = ImagePath("hero", "sprites")  # → <cwd>/images/sprites/hero.png
@@ -42,11 +42,11 @@ All classes inherit from `str`, so they can be passed directly to `pygame.image.
 
 ---
 
-### `game_core.image`
+### `pygame_core.image`
 Image loading with optional scaling.
 
 ```python
-from game_core.image import GetImage  # or: Image (same function, alias)
+from pygame_core.image import GetImage  # or: Image (same function, alias)
 
 surface = GetImage(ImagePath("player"))               # original size
 surface = GetImage(ImagePath("player"), [64, 64])     # scaled to 64×64
@@ -58,11 +58,11 @@ surface, size = GetImage(ImagePath("player"), [64, 64], ReturnSize=True)
 
 ---
 
-### `game_core.input_box`
+### `pygame_core.input_box`
 A simple text input field component.
 
 ```python
-from game_core.input_box import InputBox
+from pygame_core.input_box import InputBox
 
 box = InputBox(x=100, y=200, w=200, h=40, text="default")
 
@@ -79,11 +79,11 @@ print(box.text)
 
 ---
 
-### `game_core.database`
+### `pygame_core.database`
 Thin SQLite wrapper that stores `.db` files in a `databases/` folder next to the game.
 
 ```python
-from game_core.database import Database
+from pygame_core.database import Database
 
 db = Database("savefile")
 db.Connect()
@@ -98,7 +98,7 @@ db.Disconnect()
 
 ```
 PycharmProjects/
-├── game_core/                  ← this package
+├── pygame_core/                  ← this package
 │   ├── pyproject.toml
 │   ├── README.md
 │   ├── __init__.py
@@ -116,6 +116,6 @@ Each game's local files (e.g. `scripts/default/color.py`) are thin wrappers that
 
 ## Adding a new module
 
-1. Create `game_core/<module>.py`
-2. Import it where needed: `from game_core.<module> import ...`
+1. Create `pygame_core/<module>.py`
+2. Import it where needed: `from pygame_core.<module> import ...`
 3. No reinstall required (editable install picks it up automatically)

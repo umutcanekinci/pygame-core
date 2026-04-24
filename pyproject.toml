@@ -3,14 +3,14 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "game-core"
+name = "pygame-core"
 version = "0.1.0"
 description = "Shared pygame utilities for personal game projects"
 requires-python = ">=3.10"
 dependencies = ["pygame-ce"]
 
 [tool.setuptools]
-packages = ["game_core"]
+packages = ["pygame_core"]
 
 [tool.setuptools.package-dir]
-"game_core" = "."
+"pygame_core" = "."
