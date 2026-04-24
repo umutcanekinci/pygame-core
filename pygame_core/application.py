@@ -11,14 +11,12 @@ class Application():
         self._is_in_debug_mode = False
         self.mouse_pos = (0, 0)
         self.mouse = mouse if mouse is not None else Mouse()
+
         self.init_pygame()
         self.set_title(title)
-
         self.fetch_screen_dimensions(size)
         self.full_screen()
-
         self.center_window()
-
         self.clock = pygame.time.Clock()
 
     @staticmethod
@@ -89,13 +87,25 @@ class Application():
 
     #region Override these methods in subclasses (Abstract Methods)
 
-    def _handle_event(self, event: pygame.event.Event) -> None: pass
+    def _handle_event(self, event: pygame.event.Event) -> None:
+        """Override this method in subclasses to handle events. This method is called once per event."""
 
-    def update(self) -> None: pass
+        pass
 
-    def draw(self) -> None: pass
+    def update(self) -> None:
+        """Override this method in subclasses to update the game state. This method is called once per frame."""
 
-    def draw_debug(self) -> None: pass
+        pass
+
+    def draw(self) -> None:
+        """Override this method in subclasses to draw the game state. This method is called once per frame."""
+
+        pass
+
+    def draw_debug(self) -> None:
+        """Override this method in subclasses to draw debug information. This method is called once per frame when debug mode is enabled."""
+
+        pass
 
     #endregion
 
