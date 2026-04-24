@@ -11,6 +11,3 @@ dependencies = ["pygame-ce"]
 
 [tool.setuptools]
 packages = ["pygame_core"]
-
-[tool.setuptools.package-dir]
-"pygame_core" = "."
