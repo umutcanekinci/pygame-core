@@ -2,7 +2,7 @@ import sys
 import os
 import pygame
 from pygame import mixer
-from mouse import Mouse
+from pygame_core.mouse import Mouse
 
 class Application():
     def __init__(self, size: tuple[int, int], title: str, fps: int, mouse=None) -> None:
