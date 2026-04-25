@@ -88,8 +88,8 @@ class Application:
                     self.full_screen()
                 else:
                     self.minimize()
-            elif event.type == pygame.QUIT:
-                self.on_exit()
+        elif event.type == pygame.QUIT:
+            self.on_exit()
 
     # region Override these methods in subclasses (Abstract Methods)
 
