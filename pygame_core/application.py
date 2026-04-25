@@ -4,6 +4,7 @@ import pygame
 from pygame import mixer
 from pygame_core.mouse import Mouse
 
+
 class Application():
     def __init__(self, size: tuple[int, int], title: str, fps: int, mouse=None) -> None:
         self._is_running = False
@@ -58,16 +59,18 @@ class Application():
 
         while self._is_running:
             self.clock.tick(self._fps)
-            if self.mouse:
-                self.mouse.update()
-            self.keys = pygame.key.get_pressed()
-            if hasattr(self, "cursor"):
-                self.cursor.set_position(self.mouse.position)
+            self._listen_inputs()
             self._handle_events()
             self.update()
             self.draw()
+            self.draw_mouse()
             self.draw_debug()
             pygame.display.update()
+
+    def _listen_inputs(self) -> None:
+        if self.mouse:
+            self.mouse.update()
+        self.keys = pygame.key.get_pressed()
 
     def _handle_events(self) -> None:
         for event in pygame.event.get():
@@ -85,7 +88,7 @@ class Application():
             elif event.type == pygame.QUIT:
                 self.on_exit()
 
-    #region Override these methods in subclasses (Abstract Methods)
+    # region Override these methods in subclasses (Abstract Methods)
 
     def _handle_event(self, event: pygame.event.Event) -> None:
         """Override this method in subclasses to handle events. This method is called once per event."""
@@ -102,12 +105,16 @@ class Application():
 
         pass
 
+    def draw_mouse(self) -> None:
+        if self.mouse:
+            self.mouse.draw(self.window)
+
     def draw_debug(self) -> None:
         """Override this method in subclasses to draw debug information. This method is called once per frame when debug mode is enabled."""
 
         pass
 
-    #endregion
+    # endregion
 
     def on_exit(self) -> None:
         self.exit()
