@@ -10,7 +10,7 @@ class PanelManager(dict):
     def handle_event(self, event: pygame.event.Event, mouse_position) -> None:
         if self.tab in self:
             for obj in self[self.tab].values():
-                obj.handle_events(event, mouse_position)
+                obj.handle_event(event, mouse_position)
 
     def add_object(self, tab: str, name: str, obj) -> None:
         self.add_tab(tab)

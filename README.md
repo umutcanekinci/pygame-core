@@ -67,11 +67,11 @@ from pygame_core.input_box import InputBox
 box = InputBox(x=100, y=200, w=200, h=40, text="default")
 
 # In your event loop:
-box.HandleEvents(event, mouse_pos)
+box.handle_event(event, mouse_pos)
 box.update()
 
 # In your draw call:
-box.Draw(screen)
+box.draw(screen)
 
 # Read the current value:
 print(box.text)
