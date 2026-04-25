@@ -14,7 +14,7 @@ class Mouse:
     def set_cursor_visible(value=True) -> None:
         pygame.mouse.set_visible(value)
 
-    def set_cursor_image(self, image: Object) -> None:
+    def set_cursor_image(self, image) -> None:
         self.cursor = image
 
     def update(self) -> None:

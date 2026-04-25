@@ -5,7 +5,7 @@ from pygame import mixer
 from pygame_core.mouse import Mouse
 
 
-class Application():
+class Application:
     def __init__(self, size: tuple[int, int], title: str, fps: int, mouse=None) -> None:
         self._is_running = False
         self._fps = fps
@@ -40,7 +40,7 @@ class Application():
         return pygame.display.get_caption()[0]
 
     @staticmethod
-    def set_title(title):
+    def set_title(title: str) -> None:
         pygame.display.set_caption(title)
 
     def minimize(self):
@@ -84,7 +84,10 @@ class Application():
             elif event.key == pygame.K_F1:
                 self._is_in_debug_mode = not self._is_in_debug_mode
             elif event.key == pygame.K_F11:
-                self.full_screen() if self.size == self.minimized_size else self.minimize()
+                if self.size == self.minimized_size:
+                    self.full_screen()
+                else:
+                    self.minimize()
             elif event.type == pygame.QUIT:
                 self.on_exit()
 
