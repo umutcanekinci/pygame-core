@@ -1,6 +1,6 @@
 #-# Importing Packages #-#
 import pygame
-from pygame_core.path import *
+from pygame_core.asset_path import *
 
 #-# Image Loading Function #-#
 def load_image(path: ImagePath, size=[0, 0], return_size=False):

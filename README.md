@@ -30,12 +30,12 @@ from pygame_core.color import *
 Path helper classes that resolve asset paths relative to the game's working directory.
 
 ```python
-from pygame_core.path import ImagePath, FontPath, SoundPath, FilePath
+from pygame_core.asset_path import ImagePath, FontPath, SoundPath, FilePath
 
-img   = ImagePath("player")           # → <cwd>/images/player.png
-img   = ImagePath("hero", "sprites")  # → <cwd>/images/sprites/hero.png
-font  = FontPath("comic")             # → <cwd>/fonts/comic.ttf
-sound = SoundPath("jump")             # → <cwd>/sounds/jump.ogg
+img = ImagePath("player")  # → <cwd>/images/player.png
+img = ImagePath("hero", "sprites")  # → <cwd>/images/sprites/hero.png
+font = FontPath("comic")  # → <cwd>/fonts/comic.ttf
+sound = SoundPath("jump")  # → <cwd>/sounds/jump.ogg
 ```
 
 All classes inherit from `str`, so they can be passed directly to `pygame.image.load`, `pygame.font.Font`, etc.

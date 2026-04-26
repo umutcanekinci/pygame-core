@@ -1,3 +1,5 @@
+from pip._internal.resolution.resolvelib import factory
+
 from pygame_core.asset_manager import AssetManager
 from pathlib import Path
 from typing import Any, Callable
@@ -45,7 +47,14 @@ class PanelLoader:
             raise ValueError(f"Object '{name}' has no type and no default registered")
         if type_name not in self._factories:
             raise KeyError(f"No factory for type '{type_name}'. Registered: {list(self._factories)}")
-        obj = self._factories[type_name](obj_def, self.window_size)
+
+        if "asset" in obj_def:
+            obj_def["_asset_path"] = self.assets.image_path(obj_def["asset"])
+        if "hover" in obj_def:
+            obj_def["_hover_path"] = self.assets.image_path(obj_def["hover"])
+
+        factory = self._factories[type_name]
+        obj = factory(obj_def, self.window_size)
         self.pm.add_object(tab, name, obj)
 
     def _resolve_position(self, pos: Any) -> tuple:
