@@ -49,9 +49,9 @@ class PanelLoader:
             raise KeyError(f"No factory for type '{type_name}'. Registered: {list(self._factories)}")
 
         if "asset" in obj_def:
-            obj_def["_asset_path"] = self.assets.image_path(obj_def["asset"])
+            obj_def["asset"] = self.assets.image_path(obj_def["asset"])
         if "hover" in obj_def:
-            obj_def["_hover_path"] = self.assets.image_path(obj_def["hover"])
+            obj_def["hover"] = self.assets.image_path(obj_def["hover"])
 
         factory = self._factories[type_name]
         obj = factory(obj_def, self.window_size)
