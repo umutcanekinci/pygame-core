@@ -75,7 +75,7 @@ class Application:
     def _handle_events(self) -> None:
         for event in pygame.event.get():
             self._handle_core_event(event)
-            self._handle_event(event)
+            self.handle_event(event)
 
     def _handle_core_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.KEYDOWN:
@@ -93,7 +93,7 @@ class Application:
 
     # region Override these methods in subclasses (Abstract Methods)
 
-    def _handle_event(self, event: pygame.event.Event) -> None:
+    def handle_event(self, event: pygame.event.Event) -> None:
         """Override this method in subclasses to handle events. This method is called once per event."""
 
         pass

@@ -1,70 +1,52 @@
+from pygame_core.asset_manager import AssetManager
 from pathlib import Path
-from typing import Any
-
+from typing import Any, Callable
 import yaml
 
-from core.guiobject import GuiObject
-
+# Factory imzası: config dict + window_size → object
+ObjectFactory = Callable[[dict, tuple[int, int]], Any]
 
 class PanelLoader:
     """YAML dosyasından panel tanımlarını okuyup PanelManager'a yükler."""
 
-    def __init__(self, panel_manager, window_size: tuple[int, int]):
+    def __init__(self, panel_manager, window_size: tuple[int, int], asset_manager: AssetManager):
         self.pm = panel_manager
         self.window_size = window_size
+        self.assets = asset_manager
+        self._factories: dict[str, ObjectFactory] = {}
+        self._default_type: str | None = None
+
+    def register(self, type_name: str, factory: ObjectFactory, *, default: bool = False) -> None:
+        self._factories[type_name] = factory
+        if default:
+            self._default_type = type_name
 
     def load(self, path: str | Path) -> None:
         path = Path(path)
         if not path.exists():
             raise FileNotFoundError(f"Panel definition not found: {path}")
-
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                data = yaml.safe_load(f)
-        except yaml.YAMLError as e:
-            raise ValueError(f"Invalid YAML in {path}: {e}") from e
-
-        if not isinstance(data, dict):
-            raise ValueError(f"Top-level YAML must be a mapping in {path}")
+        with open(path, encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
 
         groups = data.get("groups", {}) or {}
-        panels = data.get("panels", {}) or {}
-
-        for tab_name, panel_def in panels.items():
-            self._load_panel(tab_name, panel_def, groups)
-
-    # ── internals ─────────────────────────────────────────────────────────
+        for tab, panel_def in (data.get("panels", {}) or {}).items():
+            self._load_panel(tab, panel_def, groups)
 
     def _load_panel(self, tab: str, panel_def: dict, groups: dict) -> None:
-        # Önce extends ile gelen shared object'leri ekle
         for group_name in panel_def.get("extends", []) or []:
-            if group_name not in groups:
-                raise KeyError(
-                    f"Group '{group_name}' referenced by panel '{tab}' not defined"
-                )
             for obj_name, obj_def in groups[group_name].items():
                 self._add_object(tab, obj_name, obj_def)
-
-        # Sonra panel'e özgü object'leri ekle (aynı isim varsa override eder)
         for obj_name, obj_def in (panel_def.get("objects", {}) or {}).items():
             self._add_object(tab, obj_name, obj_def)
 
     def _add_object(self, tab: str, name: str, obj_def: dict) -> None:
-        position  = self._resolve_position(obj_def["position"])
-        size      = self._resolve_size(obj_def["size"])
-        asset     = obj_def["asset"]
-        hover     = obj_def.get("hover")
-        extension = obj_def.get("extension")
-
-        # GuiObject sinyatürünün opsiyonel parametrelerine göre çağrı yap
-        if extension is not None:
-            gui = GuiObject(self.window_size, position, size, asset, hover, extension)
-        elif hover is not None:
-            gui = GuiObject(self.window_size, position, size, asset, hover)
-        else:
-            gui = GuiObject(self.window_size, position, size, asset)
-
-        self.pm.add_object(tab, name, gui)
+        type_name = obj_def.get("type", self._default_type)
+        if type_name is None:
+            raise ValueError(f"Object '{name}' has no type and no default registered")
+        if type_name not in self._factories:
+            raise KeyError(f"No factory for type '{type_name}'. Registered: {list(self._factories)}")
+        obj = self._factories[type_name](obj_def, self.window_size)
+        self.pm.add_object(tab, name, obj)
 
     def _resolve_position(self, pos: Any) -> tuple:
         if not isinstance(pos, list) or len(pos) != 2:

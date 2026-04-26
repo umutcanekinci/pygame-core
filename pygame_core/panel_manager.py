@@ -7,23 +7,6 @@ class PanelManager(dict):
         self.background_colors = background_colors
         self.current_panel = starting_tab
 
-    def update(self) -> None:
-        if self.current_panel not in self: return
-
-        for obj in self[self.tab].values():
-            if not hasattr(obj, "update"): continue
-
-            obj.update()
-
-    def draw(self, surface) -> None:
-        if self.background_colors and self.tab in self.background_colors:
-            surface.fill(self.background_colors[self.tab])
-
-        if self.current_panel not in self: return
-
-        for obj in self[self.current_panel].values():
-            obj.draw(surface)
-
     def handle_event(self, event: pygame.event.Event, mouse_position) -> None:
         if self.current_panel not in self: return
 
@@ -31,6 +14,23 @@ class PanelManager(dict):
             if not hasattr(obj, "handle_event"): continue
 
             obj.handle_event(event, mouse_position)
+
+    def update(self) -> None:
+        if self.current_panel not in self: return
+
+        for obj in self[self.current_panel].values():
+            if not hasattr(obj, "update"): continue
+
+            obj.update()
+
+    def draw(self, surface) -> None:
+        if self.background_colors and self.current_panel in self.background_colors:
+            surface.fill(self.background_colors[self.current_panel])
+
+        if self.current_panel not in self: return
+
+        for obj in self[self.current_panel].values():
+            obj.draw(surface)
 
     def add_object(self, panel: str, name: str, obj) -> None:
         self.add_panel(panel)
