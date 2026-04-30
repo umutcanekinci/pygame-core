@@ -42,6 +42,7 @@ class PanelLoader:
             self._add_object(tab, obj_name, obj_def)
 
     def _add_object(self, tab: str, name: str, obj_def: dict) -> None:
+        obj_def = dict(obj_def)
         type_name = obj_def.get("type", self._default_type)
         if type_name is None:
             raise ValueError(f"Object '{name}' has no type and no default registered")

@@ -1,8 +1,6 @@
-#-# Importing Packages #-#
 import pygame
 from pygame_core.asset_path import *
 
-#-# Image Loading Function #-#
 def load_image(path, size=None, return_size=False):
 	img = pygame.image.load(path).convert_alpha()
 
