@@ -1,5 +1,5 @@
 import pygame
-from pygame_core.untiy.game_object_dict import GameObjectDict
+
 
 class PanelManager(dict):
     def __init__(self, background_colors=None, starting_tab="") -> None:
@@ -10,12 +10,18 @@ class PanelManager(dict):
     def handle_event(self, event: pygame.event.Event, mouse_position) -> None:
         if self.current_panel not in self: return
 
-        self[self.current_panel].handle_event(event, mouse_position)
+        for obj in self[self.current_panel].values():
+            if not hasattr(obj, "handle_event"): continue
+
+            obj.handle_event(event, mouse_position)
 
     def update(self) -> None:
         if self.current_panel not in self: return
 
-        self[self.current_panel].update()
+        for obj in self[self.current_panel].values():
+            if not hasattr(obj, "update"): continue
+
+            obj.update()
 
     def draw(self, surface) -> None:
         if self.background_colors and self.current_panel in self.background_colors:
@@ -23,7 +29,8 @@ class PanelManager(dict):
 
         if self.current_panel not in self: return
 
-        self[self.current_panel].draw(surface)
+        for obj in self[self.current_panel].values():
+            obj.draw(surface)
 
     def add_object(self, panel: str, name: str, obj) -> None:
         self.add_panel(panel)
@@ -34,9 +41,8 @@ class PanelManager(dict):
             self.add_object(panel, name, obj)
 
     def add_panel(self, name: str) -> None:
-        if name in self: return
-
-        self[name] = GameObjectDict()
+        if name not in self:
+            self[name] = {}
 
     def open_panel(self, panel: str) -> None:
         self.current_panel = panel

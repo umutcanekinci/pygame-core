@@ -1,13 +1,12 @@
 import pygame
-
-from untiy.gameobject import GameObject
+from object import Object
 
 
 class Mouse:
     def __init__(self, tile_size=None) -> None:
         self.position = (0, 0)
         self.tile_size = tile_size
-        self.cursor: GameObject = None
+        self.cursor: Object = None
 
         if self.tile_size:
             self.tile_pos = (0, 0)
@@ -16,7 +15,7 @@ class Mouse:
     def set_cursor_visible(value=True) -> None:
         pygame.mouse.set_visible(value)
 
-    def set_cursor_image(self, image) -> None:
+    def set_cursor(self, image) -> None:
         self.cursor = image
 
     def update(self) -> None:

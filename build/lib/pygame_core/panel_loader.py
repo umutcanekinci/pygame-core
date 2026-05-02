@@ -1,9 +1,9 @@
+from pip._internal.resolution.resolvelib import factory
+
 from pygame_core.asset_manager import AssetManager
 from pathlib import Path
 from typing import Any, Callable
 import yaml
-
-from untiy.components.transform import Transform
 
 # Factory imzası: config dict + window_size → object
 ObjectFactory = Callable[[dict, tuple[int, int]], Any]
@@ -11,9 +11,9 @@ ObjectFactory = Callable[[dict, tuple[int, int]], Any]
 class PanelLoader:
     """YAML dosyasından panel tanımlarını okuyup PanelManager'a yükler."""
 
-    def __init__(self, panel_manager, window_transform: Transform, asset_manager: AssetManager):
+    def __init__(self, panel_manager, window_size: tuple[int, int], asset_manager: AssetManager):
         self.pm = panel_manager
-        self.window_transform = window_transform
+        self.window_size = window_size
         self.assets = asset_manager
         self._factories: dict[str, ObjectFactory] = {}
         self._default_type: str | None = None
@@ -55,7 +55,7 @@ class PanelLoader:
             obj_def["hover"] = self.assets.image_path(obj_def["hover"])
 
         factory = self._factories[type_name]
-        obj = factory(obj_def, self.window_transform)
+        obj = factory(obj_def, self.window_size)
         self.pm.add_object(tab, name, obj)
 
     def _resolve_position(self, pos: Any) -> tuple:
@@ -67,7 +67,7 @@ class PanelLoader:
 
     def _resolve_size(self, size: Any) -> tuple:
         if size == "WINDOW":
-            return self.window_transform
+            return self.window_size
         if isinstance(size, list) and len(size) == 2:
             return tuple(size)
         raise ValueError(f"size must be [w, h] or 'WINDOW', got {size!r}")
