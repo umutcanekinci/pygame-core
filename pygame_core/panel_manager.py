@@ -1,7 +1,8 @@
 import pygame
 from pygame_core.untiy.game_object_dict import GameObjectDict
 
-class PanelManager(dict):
+
+class PanelManager(dict[str, GameObjectDict]):
     def __init__(self, background_colors=None, starting_tab="") -> None:
         super().__init__()
         self.background_colors = background_colors

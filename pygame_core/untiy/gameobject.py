@@ -30,26 +30,23 @@ class GameObject:
 		return self._components.get(component_type.__name__)
 
 	def handle_event(self, event: pygame.event.Event, mouse_position) -> None:
-		if not self.active: return
+		self._invoke_component_method('handle_event', event, mouse_position)
 
-		for component in self._components.values():
-			enabled = not isinstance(component, Behaviour) or component.enabled
-			if enabled and hasattr(component, 'handle_event'):
-				component.handle_event(event, mouse_position)
-
-
-	def update(self):
-		if not self.active: return
-
-		for component in self._components.values():
-			enabled = not isinstance(component, Behaviour) or component.enabled
-			if enabled and hasattr(component, 'update'):
-				component.update()
+	def update(self) -> None:
+		self._invoke_component_method('update')
 
 	def draw(self, surface: pygame.Surface) -> None:
-		if not self.active: return
+		self._invoke_component_method('draw', surface)
+
+	def _invoke_component_method(self, method_name: str, *args, **kwargs) -> None:
+		if not self.active:
+			print(f"GameObject '{self.name}' is inactive. Skipping '{method_name}' method.")
+			return
 
 		for component in self._components.values():
-			enabled = not isinstance(component, Behaviour) or component.enabled
-			if enabled and hasattr(component, 'draw'):
-				component.draw(surface)
+			is_enabled = not isinstance(component, Behaviour) or component.enabled
+			if not is_enabled: continue
+
+			method = getattr(component, method_name, None)
+			if callable(method):
+				method(*args, **kwargs)

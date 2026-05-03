@@ -1,7 +1,9 @@
 import pygame
 
+from untiy.gameobject import GameObject
 
-class GameObjectDict(dict):
+
+class GameObjectDict(dict[str, GameObject]):
     def __init__(self) -> None:
         super().__init__()
 
