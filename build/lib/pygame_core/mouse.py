@@ -1,12 +1,12 @@
 import pygame
-from object import Object
+from state_object import StateObject
 
 
 class Mouse:
     def __init__(self, tile_size=None) -> None:
         self.position = (0, 0)
         self.tile_size = tile_size
-        self.cursor: Object = None
+        self.cursor: StateObject = None
 
         if self.tile_size:
             self.tile_pos = (0, 0)
