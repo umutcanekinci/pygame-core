@@ -14,17 +14,6 @@ Editable mode means any change you make inside `pygame_core/` is immediately ava
 
 ## Modules
 
-### `pygame_core.color`
-Common color constants as RGB tuples.
-
-```python
-from pygame_core.color import *
-
-# Available: Black, White, Red, Lime, Blue, Yellow, Cyan, Magenta,
-#            Silver, Gray, Maroon, Olive, Green, Purple, Teal, Navy, CustomBlue
-```
-
----
 
 ### `pygame_core.path`
 Path helper classes that resolve asset paths relative to the game's working directory.
