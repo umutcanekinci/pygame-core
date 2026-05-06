@@ -1,8 +1,13 @@
 import pygame
 from pygame_core.asset_path import *
 
+_cache: dict[str, pygame.Surface] = {}
+
 def load_image(path, size=None, return_size=False):
-	img = pygame.image.load(path).convert_alpha()
+	path_str = str(path)
+	if path_str not in _cache:
+		_cache[path_str] = pygame.image.load(path).convert_alpha()
+	img = _cache[path_str]
 
 	if size is None:
 		size = [0, 0]

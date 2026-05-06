@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Callable
 import yaml
 
-from untiy.components.transform import Transform
+from pygame_core.unity.components.transform import Transform
 
 # Factory imzası: config dict + window_size → object
 ObjectFactory = Callable[[dict, tuple[int, int]], Any]
@@ -62,7 +62,6 @@ class PanelLoader:
         if not isinstance(pos, list) or len(pos) != 2:
             raise ValueError(f"position must be [x, y], got {pos!r}")
         x, y = pos
-        # "CENTER" string'i mevcut konvansiyonla uyumlu
         return (x, y)
 
     def _resolve_size(self, size: Any) -> tuple:

@@ -1,6 +1,6 @@
 import pygame
-from untiy.components.component import Component
-from untiy.components.transform import Transform
+from pygame_core.unity.components.component import Component
+from pygame_core.unity.components.transform import Transform
 
 
 class SpriteRenderer2D(Component):
