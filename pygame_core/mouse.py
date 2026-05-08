@@ -1,6 +1,6 @@
 import pygame
 
-from untiy.gameobject import GameObject
+from pygame_core.unity.gameobject import GameObject
 
 
 class Mouse:

@@ -4,13 +4,15 @@ import pygame
 class MouseInteractive:
     """is_mouse_over, is_clicked davranışını ekler."""
     rect: pygame.Rect
+    parent: object  # opsiyonel, parent objenin rect'ini de dahil etmek için
     visible: bool = True
 
     # Press tracking için instance state
     _pressed: bool = False
 
     def is_mouse_over(self, mouse_pos):
-        return mouse_pos is not None and self.rect.collidepoint(mouse_pos) and self.visible
+        rect = self.parent.rect + self.rect if hasattr(self, "parent") else self.rect
+        return mouse_pos is not None and rect.collidepoint(mouse_pos) and self.visible
 
     def is_clicked(self, event, mouse_pos):
         pressed = getattr(self, "_pressed", False)

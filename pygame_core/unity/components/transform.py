@@ -1,6 +1,6 @@
 import pygame
 from pygame_core.utils import Centerable
-from untiy.components.component import Component
+from pygame_core.unity.components.component import Component
 
 
 class Transform(Component, pygame.Rect, Centerable):
@@ -23,7 +23,7 @@ class Transform(Component, pygame.Rect, Centerable):
 			self.parent = parent
 			return
 
-		assert isinstance(parent, Transform), "Parent must be a Transform or Rect."
+		assert isinstance(parent, Transform), "Parent must be a Transform."
 		self.parent = parent
 
 	def update(self): ...

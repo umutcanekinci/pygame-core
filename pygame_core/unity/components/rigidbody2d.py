@@ -1,5 +1,5 @@
 from pygame import Vector2
-from untiy.components.component import Component
+from pygame_core.unity.components.component import Component
 
 class Rigidbody2D(Component):
 	def __init__(self):
@@ -9,8 +9,11 @@ class Rigidbody2D(Component):
 
 	def set_velocity(self, velocity: tuple):
 		self.velocity = Vector2(velocity)
+		self._float_pos = None  # re-sync from transform on next update
 
 	def update(self) -> None:
+		if self.velocity == Vector2(0, 0):
+			return
 		transform = self.game_object.rect
 		if self._float_pos is None:
 			self._float_pos = Vector2(transform.topleft)

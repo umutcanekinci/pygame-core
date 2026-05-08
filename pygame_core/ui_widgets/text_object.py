@@ -1,8 +1,8 @@
 import pygame
 
 from pygame_core.utils import Centerable
-from untiy.gameobject import GameObject
-from untiy.components.sprite_renderer2d import SpriteRenderer2D
+from pygame_core.unity.gameobject import GameObject
+from pygame_core.unity.components.sprite_renderer2d import SpriteRenderer2D
 
 
 class TextObject(GameObject, Centerable):
