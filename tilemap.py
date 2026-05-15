@@ -11,10 +11,11 @@ class Tilemap(list[list[Tile]]):
 		self.create()
 
 	def create(self) -> None:
+		self.clear()
 		for row_number in range(self.row_count):
 			row = []
 			for column_number in range(self.column_count):
-				row.append(Tile(132, 99, row_number + 1, column_number + 1))
+				row.append(Tile(row_number + 1, column_number + 1))
 
 			self.append(row)
 
