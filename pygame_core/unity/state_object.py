@@ -21,7 +21,7 @@ from pygame_core.utils import Centerable, MouseInteractive
 class StateObject(Centerable, MouseInteractive, GameObject):
 	def __init__(self, parent: Transform = None,
 	             pos=("CENTER", "CENTER"),
-	             size=(None, None),
+	             size=(0, 0),
 	             image_path: PathLike = None,
 	             nine_slice: int = 0) -> None:
 
@@ -49,11 +49,13 @@ class StateObject(Centerable, MouseInteractive, GameObject):
 
 	def set_state(self, state: Any) -> None:
 		self._state = state
-		self._renderer.set_image(self._active_surface())
+		self._renderer.set_image(self._active_surface)
 
+	@property
 	def _active_surface(self) -> pygame.Surface:
 		return self.images[self._state]
 
+	@property
 	def get_info(self) -> tuple:
 		return "StateObject Info:", {
 			"state": self._state,
@@ -80,6 +82,7 @@ class HoverableStateObject(StateObject):
 		if hover_image_path is not None:
 			self._hover_images[state] = load_image(hover_image_path, self._size, self._nine_slice)
 
+	@property
 	def _active_surface(self) -> pygame.Surface:
 		if self._hovered and self._state in self._hover_images:
 			return self._hover_images[self._state]
@@ -89,4 +92,4 @@ class HoverableStateObject(StateObject):
 		was_hovered = self._hovered
 		self._hovered = self.is_mouse_over(mouse_pos)
 		if self._hovered != was_hovered:
-			self._renderer.set_image(self._active_surface())
+			self._renderer.set_image(self._active_surface)

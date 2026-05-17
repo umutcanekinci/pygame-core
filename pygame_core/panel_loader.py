@@ -49,13 +49,24 @@ class PanelLoader:
         if type_name not in self._factories:
             raise KeyError(f"No factory for type '{type_name}'. Registered: {list(self._factories)}")
 
+        parent_name = obj_def.pop("parent", None)
+        if parent_name is not None:
+            if tab not in self.pm or parent_name not in self.pm[tab]:
+                raise KeyError(
+                    f"Object '{name}' references unknown parent '{parent_name}' in panel '{tab}'. "
+                    f"Parent objects must be declared before their children."
+                )
+            parent = self.pm[tab][parent_name].rect
+        else:
+            parent = self.window_transform
+
         if "asset" in obj_def:
             obj_def["asset"] = self.assets.image_path(obj_def["asset"])
         if "hover" in obj_def:
             obj_def["hover"] = self.assets.image_path(obj_def["hover"])
 
         factory = self._factories[type_name]
-        obj = factory(obj_def, self.window_transform)
+        obj = factory(obj_def, parent)
         self.pm.add_object(tab, name, obj)
 
     def _resolve_position(self, pos: Any) -> tuple:

@@ -16,6 +16,8 @@ class Transform(Component, pygame.Rect, Centerable):
 	def set_position(self, position: tuple):
 		parent_size = self.parent.size if self.parent else self.size
 		position = super().resolve_pos(position, parent_size, self.size)
+		if self.parent is not None:
+			position = (position[0] + self.parent.x, position[1] + self.parent.y)
 		self.topleft = position
 
 	def set_parent(self, parent: Transform):
