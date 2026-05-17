@@ -14,7 +14,7 @@ class _ScheduledCall:
 
 
 class GameObject:
-	def __init__(self, name: str = 'GameObject'):
+	def __init__(self, name: str = 'game_object'):
 		self.name = name
 		self._active: bool = True
 		self._parent: GameObject | None = None

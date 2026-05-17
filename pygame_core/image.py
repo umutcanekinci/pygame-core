@@ -3,7 +3,15 @@ from pygame_core.asset_path import *
 
 _cache: dict[str, pygame.Surface] = {}
 
-def load_image(path, size=None, return_size=False):
+
+def load_image(path, size=None, nine_slice: int = 0, return_size: bool = False):
+	"""Load (and cache) an image; optionally scale or nine-slice it.
+
+	- size=None or (0, 0): return the original surface.
+	- A zero component in `size` means 'keep the source dimension on that axis'.
+	- A 1/3 component means 'one-fifth of the source dimension' (legacy convention).
+	- If nine_slice > 0, scale to size using 9-slice (corners pixel-perfect).
+	"""
 	path_str = str(path)
 	if path_str not in _cache:
 		_cache[path_str] = pygame.image.load(path).convert_alpha()
@@ -22,7 +30,65 @@ def load_image(path, size=None, return_size=False):
 	if size[0] == 1 / 3: size[0] = img.get_width() // 5
 	if size[1] == 1 / 3: size[1] = img.get_height() // 5
 
-	scaled = pygame.transform.scale(img, size)
-	return (scaled, size) if return_size else scaled
+	if nine_slice > 0:
+		result = nine_slice_scale(img, tuple(size), nine_slice)
+	else:
+		result = pygame.transform.scale(img, size)
+	return (result, size) if return_size else result
 
-Image = load_image
+
+def scale(image: pygame.Surface, size) -> pygame.Surface:
+	return pygame.transform.scale(image, size)
+
+
+def scale_by(surface: pygame.Surface, factor) -> pygame.Surface:
+	if isinstance(factor, (int, float)):
+		factor = (factor, factor)
+	w = int(surface.get_width()  * factor[0])
+	h = int(surface.get_height() * factor[1])
+	return scale(surface, (w, h))
+
+
+def nine_slice_scale(image: pygame.Surface, target_size: tuple[int, int], corner: int) -> pygame.Surface:
+	"""Scale image to target_size using 9-slice.
+
+	corner: size of the corner region in the SOURCE image (pixels).
+	Corners are copied at their original pixel size (no distortion).
+	Edges are stretched in one axis; the center fills the remaining area.
+	"""
+	src_w, src_h = image.get_size()
+	dst_w, dst_h = target_size
+	result = pygame.Surface(target_size, pygame.SRCALPHA)
+
+	msx = src_w - corner * 2  # mid width  in source
+	msy = src_h - corner * 2  # mid height in source
+	mdx = dst_w - corner * 2  # mid width  in dest
+	mdy = dst_h - corner * 2  # mid height in dest
+
+	def _blit(sx, sy, sw, sh, dx, dy, dw, dh):
+		piece = image.subsurface((sx, sy, sw, sh))
+		if (sw, sh) != (dw, dh):
+			piece = pygame.transform.scale(piece, (dw, dh))
+		result.blit(piece, (dx, dy))
+
+	c = corner
+	sw, sh = src_w, src_h
+	dw, dh = dst_w, dst_h
+
+	# corners (no scaling)
+	_blit(0,      0,      c, c,  0,      0,      c, c)
+	_blit(sw - c, 0,      c, c,  dw - c, 0,      c, c)
+	_blit(0,      sh - c, c, c,  0,      dh - c, c, c)
+	_blit(sw - c, sh - c, c, c,  dw - c, dh - c, c, c)
+	# edges (stretch in one axis)
+	_blit(c, 0,      msx, c,   c, 0,      mdx, c)
+	_blit(c, sh - c, msx, c,   c, dh - c, mdx, c)
+	_blit(0,      c, c, msy,   0,      c, c, mdy)
+	_blit(sw - c, c, c, msy,   dw - c, c, c, mdy)
+	# center (stretch in both axes)
+	_blit(c, c, msx, msy,  c, c, mdx, mdy)
+
+	return result
+
+
+Image = load_image  # legacy alias mentioned in README

@@ -1,6 +1,5 @@
 import pygame
 from pygame_core.unity.components.component import Component
-from pygame_core.unity.components.transform import Transform
 
 
 class SpriteRenderer2D(Component):
@@ -12,4 +11,6 @@ class SpriteRenderer2D(Component):
 		self.image = image
 
 	def draw(self, surface: pygame.Surface) -> None:
-		surface.blit(self.image, super().get_component(Transform))
+		if self.image is None:
+			return
+		surface.blit(self.image, self.game_object.rect)
