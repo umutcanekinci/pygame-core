@@ -1,4 +1,5 @@
 # pygame_core/asset_path.py
+import os
 from pathlib import Path
 from typing import Union
 
@@ -44,3 +45,6 @@ class FontPath(AssetPath):
 class SoundPath(AssetPath):
     def __init__(self, name: str, folder: str = "", extension: str = "ogg"):
         super().__init__(name, folder, extension, base="assets/sounds")
+
+
+PathLike = Union[str, ImagePath, os.PathLike]

@@ -1,0 +1,92 @@
+"""Component-based StateObject: maps state keys to Surfaces, swaps via one SpriteRenderer2D.
+
+StateObject — single image (or multi-state via add_state); state set via set_state.
+HoverableStateObject — adds a parallel _hover_images dict; handle_event swaps to the
+hover surface when the mouse enters the rect (per-state, falls through to base if missing).
+
+Project-specific behaviour (auto-resolve from events, _base_state semantics, public
+'state' attribute, dict-init) belongs in a project-local subclass — keep this base
+minimal and explicit.
+"""
+from typing import Any, cast
+import pygame
+from pygame_core.asset_path import PathLike
+from pygame_core.image import load_image
+from pygame_core.unity.gameobject import GameObject
+from pygame_core.unity.components.sprite_renderer2d import SpriteRenderer2D
+from pygame_core.unity.components.transform import Transform
+from pygame_core.utils import Centerable, MouseInteractive
+
+
+class StateObject(Centerable, MouseInteractive, GameObject):
+	def __init__(self, parent: Transform = None,
+	             pos=("CENTER", "CENTER"),
+	             size=(None, None),
+	             image_path: PathLike = None,
+	             nine_slice: int = 0) -> None:
+
+		super().__init__()
+
+		self.rect.size = size
+		self.rect.set_parent(parent)
+		self.rect.set_position(pos)
+
+		self._size = size
+		self._nine_slice = nine_slice
+		self._state: Any = None
+		self.images: dict[Any, pygame.Surface] = {}
+
+		self._renderer = cast(SpriteRenderer2D, self.add_component(SpriteRenderer2D))
+
+		if image_path is not None:
+			self.add_state(None, image_path)
+
+	def add_state(self, state: Any, image_path: PathLike) -> None:
+		surface = load_image(image_path, self._size, self._nine_slice)
+		self.images[state] = surface
+		if state == self._state:
+			self._renderer.set_image(surface)
+
+	def set_state(self, state: Any) -> None:
+		self._state = state
+		self._renderer.set_image(self._active_surface())
+
+	def _active_surface(self) -> pygame.Surface:
+		return self.images[self._state]
+
+	def get_info(self) -> tuple:
+		return "StateObject Info:", {
+			"state": self._state,
+			"pos": self.rect.topleft,
+			"size": self.rect.size,
+		}
+
+
+class HoverableStateObject(StateObject):
+	def __init__(self, parent: Transform = None,
+	             pos=("CENTER", "CENTER"),
+	             size=(None, None),
+	             image_path: PathLike = None,
+	             hover_image_path: PathLike = None,
+	             nine_slice: int = 0) -> None:
+		super().__init__(parent, pos, size, image_path, nine_slice)
+		self._hovered = False
+		self._hover_images: dict[Any, pygame.Surface] = {}
+		if hover_image_path is not None:
+			self._hover_images[None] = load_image(hover_image_path, self._size, self._nine_slice)
+
+	def add_state(self, state: Any, image_path: PathLike, hover_image_path: PathLike = None) -> None:
+		super().add_state(state, image_path)
+		if hover_image_path is not None:
+			self._hover_images[state] = load_image(hover_image_path, self._size, self._nine_slice)
+
+	def _active_surface(self) -> pygame.Surface:
+		if self._hovered and self._state in self._hover_images:
+			return self._hover_images[self._state]
+		return self.images[self._state]
+
+	def handle_event(self, event, mouse_pos: tuple) -> None:
+		was_hovered = self._hovered
+		self._hovered = self.is_mouse_over(mouse_pos)
+		if self._hovered != was_hovered:
+			self._renderer.set_image(self._active_surface())
