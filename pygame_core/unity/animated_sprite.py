@@ -41,7 +41,7 @@ class AnimatedSprite(GameObject):
 		super().__init__(name=name)
 
 		src_size = frames[0].get_size()
-		resolved_size = tuple(size) if tuple(size) != (0, 0) else src_size
+		resolved_size = self._resolve_size(size, src_size)
 		if resolved_size != src_size:
 			frames = [pygame.transform.scale(f, resolved_size) for f in frames]
 
@@ -53,6 +53,16 @@ class AnimatedSprite(GameObject):
 		self.animator = cast(Animator, self.add_component(Animator))
 		self.animator.add_clip("default", AnimationClip(frames, fps=fps, loop=loop))
 		self.animator.play("default")
+
+	@staticmethod
+	def _resolve_size(size, src_size: tuple[int, int]) -> tuple[int, int]:
+		"""Normalise the caller's size to a (w, h) 2-tuple, defaulting to src_size."""
+		if isinstance(size, pygame.Rect):
+			size = size.size
+		size = tuple(size) if size else (0, 0)
+		if len(size) != 2:
+			raise ValueError(f"AnimatedSprite size must be (w, h), got {size!r}")
+		return size if size != (0, 0) else src_size
 
 	def add_clip(self, name: str, frames: list[pygame.Surface], fps: float = 12.0, loop: bool = True) -> None:
 		self.animator.add_clip(name, AnimationClip(frames, fps=fps, loop=loop))

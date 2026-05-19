@@ -52,14 +52,25 @@ class Animator(Component):
 	def current_clip(self) -> str | None:
 		return self._clip_name
 
+	# Beyond this many frame-durations of accumulated lag, assume the animator
+	# was paused (e.g. its panel was hidden) and resume from the current frame
+	# rather than snapping forward. Without this, switching back to a panel
+	# after several seconds would advance a non-looping clip straight to its
+	# last frame on the first tick.
+	_RESUME_AFTER_LAG_FACTOR = 4
+
 	def update(self) -> None:
 		if not self._playing or self._clip is None:
 			return
 		duration = self._clip.frame_duration_ms
 		if duration <= 0:
 			return
-		elapsed = pygame.time.get_ticks() - self._last_step_ms
+		now = pygame.time.get_ticks()
+		elapsed = now - self._last_step_ms
 		if elapsed < duration:
+			return
+		if elapsed > duration * self._RESUME_AFTER_LAG_FACTOR:
+			self._last_step_ms = now
 			return
 		steps = elapsed // duration
 		self._last_step_ms += steps * duration
