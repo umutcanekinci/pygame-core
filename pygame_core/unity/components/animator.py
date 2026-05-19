@@ -1,0 +1,83 @@
+import pygame
+from pygame_core.unity.components.component import Component
+from pygame_core.unity.components.sprite_renderer2d import SpriteRenderer2D
+
+
+class AnimationClip:
+	def __init__(self, frames: list[pygame.Surface], fps: float = 12.0, loop: bool = True):
+		self.frames = frames
+		self.fps = fps
+		self.loop = loop
+
+	@property
+	def frame_duration_ms(self) -> int:
+		return int(1000 / self.fps) if self.fps > 0 else 0
+
+
+class Animator(Component):
+	def __init__(self):
+		super().__init__()
+		self.clips: dict[str, AnimationClip] = {}
+		self._clip: AnimationClip | None = None
+		self._clip_name: str | None = None
+		self._frame: int = 0
+		self._last_step_ms: int = 0
+		self._playing: bool = False
+
+	def add_clip(self, name: str, clip: AnimationClip) -> None:
+		self.clips[name] = clip
+
+	def play(self, name: str, restart: bool = False) -> None:
+		if not restart and self._clip_name == name and self._playing:
+			return
+		clip = self.clips.get(name)
+		if clip is None or not clip.frames:
+			return
+		self._clip = clip
+		self._clip_name = name
+		self._frame = 0
+		self._last_step_ms = pygame.time.get_ticks()
+		self._playing = True
+		self._apply()
+
+	def stop(self) -> None:
+		self._playing = False
+		self._frame = 0
+
+	@property
+	def is_playing(self) -> bool:
+		return self._playing
+
+	@property
+	def current_clip(self) -> str | None:
+		return self._clip_name
+
+	def update(self) -> None:
+		if not self._playing or self._clip is None:
+			return
+		duration = self._clip.frame_duration_ms
+		if duration <= 0:
+			return
+		elapsed = pygame.time.get_ticks() - self._last_step_ms
+		if elapsed < duration:
+			return
+		steps = elapsed // duration
+		self._last_step_ms += steps * duration
+		self._advance(int(steps))
+		self._apply()
+
+	def _advance(self, steps: int) -> None:
+		end = len(self._clip.frames) - 1
+		nxt = self._frame + steps
+		if nxt <= end:
+			self._frame = nxt
+		elif self._clip.loop:
+			self._frame = nxt % len(self._clip.frames)
+		else:
+			self._frame = end
+			self._playing = False
+
+	def _apply(self) -> None:
+		renderer = self.get_component(SpriteRenderer2D)
+		if renderer is not None:
+			renderer.set_image(self._clip.frames[self._frame])
