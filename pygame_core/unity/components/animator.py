@@ -5,13 +5,15 @@ from pygame_core.unity.components.sprite_renderer2d import SpriteRenderer2D
 
 class AnimationClip:
 	def __init__(self, frames: list[pygame.Surface], fps: float = 12.0, loop: bool = True):
+		if fps <= 0:
+			raise ValueError(f"AnimationClip fps must be positive, got {fps!r}")
 		self.frames = frames
 		self.fps = fps
 		self.loop = loop
 
 	@property
 	def frame_duration_ms(self) -> int:
-		return int(1000 / self.fps) if self.fps > 0 else 0
+		return int(1000 / self.fps)
 
 
 class Animator(Component):
