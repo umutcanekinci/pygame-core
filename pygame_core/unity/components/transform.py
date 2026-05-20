@@ -1,21 +1,23 @@
 import pygame
-from pygame_core.utils import Centerable
+from pygame_core.utils import Anchorable
 from pygame_core.unity.components.component import Component
 
 
-class Transform(Component, pygame.Rect, Centerable):
+class Transform(Component, pygame.Rect, Anchorable):
 	def __init__(self,
 				 position: tuple = (0, 0),
 				 size: tuple = (0, 0),
-				 parent: Transform | None = None
+				 parent: Transform | None = None,
+				 anchor: str = "top-left",
 				 ):
 		Component.__init__(self)
 		pygame.Rect.__init__(self, position, size)
 		self.parent = parent
+		self.anchor = anchor
 
 	def set_position(self, position: tuple):
 		parent_size = self.parent.size if self.parent else self.size
-		position = super().resolve_pos(position, parent_size, self.size)
+		position = super().resolve_pos(position, parent_size, self.size, self.anchor)
 		if self.parent is not None:
 			position = (position[0] + self.parent.x, position[1] + self.parent.y)
 		self.topleft = position
@@ -29,4 +31,3 @@ class Transform(Component, pygame.Rect, Centerable):
 		self.parent = parent
 
 	def update(self): ...
-

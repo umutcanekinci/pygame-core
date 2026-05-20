@@ -15,20 +15,22 @@ from pygame_core.image import load_image
 from pygame_core.unity.gameobject import GameObject
 from pygame_core.unity.components.sprite_renderer2d import SpriteRenderer2D
 from pygame_core.unity.components.transform import Transform
-from pygame_core.utils import Centerable, MouseInteractive
+from pygame_core.utils import Anchorable, MouseInteractive
 
 
-class StateObject(Centerable, MouseInteractive, GameObject):
+class StateObject(Anchorable, MouseInteractive, GameObject):
 	def __init__(self, parent: Transform = None,
 	             pos=("CENTER", "CENTER"),
 	             size=(0, 0),
 	             image_path: PathLike = None,
-	             nine_slice: int = 0) -> None:
+	             nine_slice: int = 0,
+	             anchor: str = "top-left") -> None:
 
 		super().__init__()
 
 		self.rect.size = size
 		self.rect.set_parent(parent)
+		self.rect.anchor = anchor
 		self.rect.set_position(pos)
 
 		self._size = size
@@ -70,8 +72,9 @@ class HoverableStateObject(StateObject):
 	             size=(None, None),
 	             image_path: PathLike = None,
 	             hover_image_path: PathLike = None,
-	             nine_slice: int = 0) -> None:
-		super().__init__(parent, pos, size, image_path, nine_slice)
+	             nine_slice: int = 0,
+	             anchor: str = "top-left") -> None:
+		super().__init__(parent, pos, size, image_path, nine_slice, anchor)
 		self._hovered = False
 		self._hover_images: dict[Any, pygame.Surface] = {}
 		if hover_image_path is not None:

@@ -1,11 +1,11 @@
 import pygame
 
-from pygame_core.utils import Centerable
+from pygame_core.utils import Anchorable
 from pygame_core.unity.gameobject import GameObject
 from pygame_core.unity.components.sprite_renderer2d import SpriteRenderer2D
 
 
-class TextObject(GameObject, Centerable):
+class TextObject(GameObject, Anchorable):
     """A GUI-compatible text label loaded from panel YAML.
 
     Implements the same minimal interface as GuiObject (draw / handle_event /
@@ -20,10 +20,12 @@ class TextObject(GameObject, Centerable):
         font: pygame.font.Font,
         color,
         background_color=None,
+        anchor: str = "top-left",
     ) -> None:
         GameObject.__init__(self)
 
         self.rect.parent = parent
+        self.rect.anchor = anchor
         self._position_spec = position
         self.text = text
         self.font = font
