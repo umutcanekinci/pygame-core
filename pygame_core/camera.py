@@ -12,13 +12,24 @@ ZOOM_MAX         = 2.0
 
 
 class Camera:
-    def __init__(self, rect, map_width=None, map_height=None, scroll_rect=None):
+    def __init__(self, rect, map_width=None, map_height=None, scroll_rect=None, *,
+                 edge_scroll_zone: int = EDGE_SCROLL_ZONE,
+                 speed: int = CAMERA_SPEED,
+                 zoom_step: float = ZOOM_STEP,
+                 zoom_min: float = ZOOM_MIN,
+                 zoom_max: float = ZOOM_MAX):
         self.rect        = rect
         self.scroll_rect = scroll_rect or rect
         self._offset     = Vector2(0.0, 0.0)
         self.scale       = 1.0
         self._map_width  = map_width  or rect.width
         self._map_height = map_height or rect.height
+
+        self._edge_scroll_zone = edge_scroll_zone
+        self._speed            = speed
+        self._zoom_step        = zoom_step
+        self._zoom_min         = zoom_min
+        self._zoom_max         = zoom_max
 
     # ── transforms ────────────────────────────────────────────────────────────
 
@@ -49,15 +60,15 @@ class Camera:
 
     def handle_event(self, event, mouse_pos) -> None:
         if event.type == pygame.MOUSEWHEEL and self._inside_viewport(mouse_pos):
-            self._zoom_at(mouse_pos, self.scale * (1.0 + ZOOM_STEP * event.y))
+            self._zoom_at(mouse_pos, self.scale * (1.0 + self._zoom_step * event.y))
 
     def update_with_mouse(self, mouse_pos):
         mx, my = mouse_pos
         dx = dy = 0
-        if mx > self.scroll_rect.width  - EDGE_SCROLL_ZONE: dx = -CAMERA_SPEED
-        if mx < EDGE_SCROLL_ZONE:                           dx = +CAMERA_SPEED
-        if my > self.scroll_rect.height - EDGE_SCROLL_ZONE: dy = -CAMERA_SPEED
-        if my < EDGE_SCROLL_ZONE:                           dy = +CAMERA_SPEED
+        if mx > self.scroll_rect.width  - self._edge_scroll_zone: dx = -self._speed
+        if mx < self._edge_scroll_zone:                           dx = +self._speed
+        if my > self.scroll_rect.height - self._edge_scroll_zone: dy = -self._speed
+        if my < self._edge_scroll_zone:                           dy = +self._speed
         if dx or dy:
             self._offset.x += dx
             self._offset.y += dy
@@ -69,7 +80,7 @@ class Camera:
         return 0 <= screen_pos[0] < self.rect.width and 0 <= screen_pos[1] < self.rect.height
 
     def _zoom_at(self, screen_pos, target_scale: float) -> None:
-        new_scale = max(ZOOM_MIN, min(ZOOM_MAX, target_scale))
+        new_scale = max(self._zoom_min, min(self._zoom_max, target_scale))
         if new_scale == self.scale:
             return
         world_under_cursor = self.screen_to_world(screen_pos)
