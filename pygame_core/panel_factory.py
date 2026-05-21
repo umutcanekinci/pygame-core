@@ -10,9 +10,9 @@ import pygame
 from pygame_core.font import load_font
 from pygame_core.sprite_sheet import SpriteSheet
 from pygame_core.ui_widgets.text_object import TextObject
-from pygame_core.unity.animated_sprite import AnimatedSprite
-from pygame_core.unity.components.transform import Transform
-from pygame_core.unity.state_object import StateObject, HoverableStateObject
+from pygame_core.ecs.animated_sprite import AnimatedSprite
+from pygame_core.ecs.components.transform import Transform
+from pygame_core.ecs.state_object import StateObject, HoverableStateObject
 
 
 def make_factory(assets):

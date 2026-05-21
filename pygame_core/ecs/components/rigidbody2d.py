@@ -1,5 +1,5 @@
 from pygame import Vector2
-from pygame_core.unity.components.component import Component
+from pygame_core.ecs.components.component import Component
 
 class Rigidbody2D(Component):
 	def __init__(self):

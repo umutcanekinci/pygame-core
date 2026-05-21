@@ -25,7 +25,7 @@ class AssetPath:
         return self.full_path
 
     def __fspath__(self) -> str:
-        # os.PathLike protokolü — pygame.image.load(path) bunu kabul eder
+        # os.PathLike protocol — pygame.image.load(path) accepts this
         return self.full_path
 
     def __repr__(self) -> str:

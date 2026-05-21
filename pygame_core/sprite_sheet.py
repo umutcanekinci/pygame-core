@@ -1,6 +1,6 @@
 """SpriteSheet: slice a single image into a list of frame surfaces.
 
-Pairs naturally with pygame_core.unity.components.animator.AnimationClip:
+Pairs naturally with pygame_core.ecs.components.animator.AnimationClip:
 
     sheet  = SpriteSheet.from_path("coin_strip4.png")
     frames = sheet.strip(4)

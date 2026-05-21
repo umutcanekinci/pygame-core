@@ -1,8 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
-from pygame_core.unity.components.component import Component, Behaviour
-from pygame_core.unity.components.transform import Transform
+from pygame_core.ecs.components.component import Component, Behaviour
+from pygame_core.ecs.components.transform import Transform
 import pygame
 
 

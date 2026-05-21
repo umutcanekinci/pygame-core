@@ -45,7 +45,7 @@ class AssetManager:
             )
 
     def validate(self) -> list[str]:
-        """Tüm path'lerin disk'te var olduğunu kontrol et. Eksikleri döner."""
+        """Validate that every registered path exists on disk. Returns the missing ones."""
         missing = []
         for key, path in {**self._images, **self._fonts, **self._sounds}.items():
             if not Path(str(path)).exists():
@@ -58,7 +58,7 @@ class AssetManager:
         return self._images[key]
 
     def get_image(self, key: str) -> pygame.Surface:
-        """Cached surface — aynı key için tek instance."""
+        """Cached surface — one instance per key."""
         if key not in self._image_cache:
             path = self.image_path(key)
             self._image_cache[key] = pygame.image.load(path).convert_alpha()

@@ -3,13 +3,13 @@ from pathlib import Path
 from typing import Any, Callable
 import yaml
 
-from pygame_core.unity.components.transform import Transform
+from pygame_core.ecs.components.transform import Transform
 
-# Factory imzası: config dict + window_size → object
+# Factory signature: config dict + window_size → object
 ObjectFactory = Callable[[dict, tuple[int, int]], Any]
 
 class PanelLoader:
-    """YAML dosyasından panel tanımlarını okuyup PanelManager'a yükler."""
+    """Reads panel definitions from a YAML file and loads them into PanelManager."""
 
     def __init__(self, panel_manager, window_transform: Transform, asset_manager: AssetManager):
         self.pm = panel_manager

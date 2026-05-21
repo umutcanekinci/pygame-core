@@ -1,5 +1,5 @@
 import pygame
-from pygame_core.unity.game_object_dict import GameObjectDict
+from pygame_core.ecs.game_object_dict import GameObjectDict
 
 
 class PanelManager(dict[str, GameObjectDict]):

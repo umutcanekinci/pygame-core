@@ -12,9 +12,9 @@ from typing import Any, cast
 import pygame
 from pygame_core.asset_path import PathLike
 from pygame_core.image import load_image
-from pygame_core.unity.gameobject import GameObject
-from pygame_core.unity.components.sprite_renderer2d import SpriteRenderer2D
-from pygame_core.unity.components.transform import Transform
+from pygame_core.ecs.game_object import GameObject
+from pygame_core.ecs.components.sprite_renderer2d import SpriteRenderer2D
+from pygame_core.ecs.components.transform import Transform
 from pygame_core.utils import Anchorable, MouseInteractive
 
 

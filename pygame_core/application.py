@@ -81,7 +81,7 @@ class Application:
     def _handle_core_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                self.on_exit()
+                self.on_exit_request()
             elif event.key == pygame.K_F1:
                 self._is_in_debug_mode = not self._is_in_debug_mode
             elif event.key == pygame.K_F11:
@@ -90,7 +90,7 @@ class Application:
                 else:
                     self.minimize()
         elif event.type == pygame.QUIT:
-            self.on_exit()
+            self.on_exit_request()
 
     # region Override these methods in subclasses (Abstract Methods)
 
@@ -120,7 +120,7 @@ class Application:
 
     # endregion
 
-    def on_exit(self) -> None:
+    def on_exit_request(self) -> None:
         self.exit()
 
     def exit(self) -> None:

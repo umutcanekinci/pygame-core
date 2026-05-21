@@ -1,6 +1,6 @@
 import pygame
-from pygame_core.unity.components.component import Component
-from pygame_core.unity.components.sprite_renderer2d import SpriteRenderer2D
+from pygame_core.ecs.components.component import Component
+from pygame_core.ecs.components.sprite_renderer2d import SpriteRenderer2D
 
 
 class AnimationClip:
