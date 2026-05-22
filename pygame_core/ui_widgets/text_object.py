@@ -6,42 +6,56 @@ from pygame_core.ecs.components.sprite_renderer2d import SpriteRenderer2D
 
 
 class TextObject(GameObject, Anchorable):
-    """A GUI-compatible text label loaded from panel YAML.
+    """A GUI-compatible text label.
 
-    Implements the same minimal interface as GuiObject (draw / handle_event /
-    is_clicked / set_state) so PanelManager can treat it uniformly.
+    Single-state usage: pass `text=...`. Multi-state: pass `states={"default": ...,
+    "hover": ..., "purchased": ...}` and the object auto-syncs to its parent's
+    `_state` / `_hovered` on each event tick — drop a TextObject as a child of a
+    HoverableStateObject to get state-driven labels without a wrapping Button class.
     """
 
     def __init__(
         self,
         parent,
         position,
-        text: str,
-        font: pygame.font.Font,
-        color,
-        background_color=None,
-        padding=None,
+        text: str = "",
+        font: pygame.font.Font = None,
+        color = (255, 255, 255),
+        background_color = None,
+        padding = None,
         anchor: str = "top-left",
+        states: dict | None = None,
     ) -> None:
         GameObject.__init__(self)
 
         self.rect.parent = parent
         self.rect.anchor = anchor
         self._position_spec = position
-        self.text = text
         self.font = font
         self.color = self._parse_color(color)
         self.background_color = self._parse_color(background_color)
         self.padding = self._parse_padding(padding)
 
+        self.states: dict = dict(states) if states else {}
+        if text and "default" not in self.states:
+            self.states["default"] = text
+        self.state: str | None = "default" if "default" in self.states else (
+            next(iter(self.states)) if self.states else None
+        )
+        self.text: str = self.states.get(self.state, "") if self.state is not None else (text or "")
+
         self.add_component(SpriteRenderer2D)
         self._reflow()
 
-    def set_text(self, text: str) -> None:
-        if text == self.text:
+    def set_text(self, text: str, *, state: str | None = None) -> None:
+        """Update text content. With no state, edits the currently-active state."""
+        target = state if state is not None else (self.state or "default")
+        if self.states.get(target) == text:
             return
-        self.text = text
-        self._reflow()
+        self.states[target] = text
+        if target == self.state:
+            self.text = text
+            self._reflow()
 
     def set_color(self, color) -> None:
         new_color = self._parse_color(color)
@@ -49,6 +63,36 @@ class TextObject(GameObject, Anchorable):
             return
         self.color = new_color
         self._reflow()
+
+    def set_state(self, state: str | None) -> None:
+        if state == self.state:
+            return
+        if state is not None and state not in self.states:
+            return
+        self.state = state
+        self.text = self.states.get(state, "") if state is not None else ""
+        self._reflow()
+
+    def handle_event(self, event, mouse_position) -> None:
+        super().handle_event(event, mouse_position)
+        if len(self.states) <= 1 or self.rect.parent is None:
+            return
+        parent_obj = getattr(self.rect.parent, "game_object", None)
+        if parent_obj is None:
+            return
+        resolved = self._resolve_state_from(parent_obj)
+        if resolved != self.state:
+            self.set_state(resolved)
+
+    def _resolve_state_from(self, parent) -> str | None:
+        parent_state = getattr(parent, "state", None) or getattr(parent, "_state", None)
+        if parent_state is not None and parent_state in self.states:
+            return parent_state
+        if getattr(parent, "_hovered", False) and "hover" in self.states:
+            return "hover"
+        if "default" in self.states:
+            return "default"
+        return self.state
 
     def _reflow(self) -> None:
         text_surface = self.font.render(self.text, True, self.color)
