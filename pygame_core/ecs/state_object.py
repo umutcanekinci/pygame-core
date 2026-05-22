@@ -1,12 +1,13 @@
 """Component-based StateObject: maps state keys to Surfaces, swaps via one SpriteRenderer2D.
 
-StateObject — single image (or multi-state via add_state); state set via set_state.
-HoverableStateObject — adds a parallel _hover_images dict; handle_event swaps to the
-hover surface when the mouse enters the rect (per-state, falls through to base if missing).
+StateObject — single image (or multi-state via add_state / add_surface); state set
+via set_state or set_base_state. Exposes `state` (current visual key) and `focused`
+(persistent keyboard-focus flag).
 
-Project-specific behaviour (auto-resolve from events, _base_state semantics, public
-'state' attribute, dict-init) belongs in a project-local subclass — keep this base
-minimal and explicit.
+HoverableStateObject — adds a parallel _hover_images dict; handle_event swaps to the
+hover surface when the mouse enters the rect (per-state, falls through to base if
+missing). The hover surface is also shown when `focused` is true, so keyboard-focus
+visuals reuse the hover artwork without faking a mouse position.
 """
 from typing import Any, cast
 import pygame
@@ -36,6 +37,8 @@ class StateObject(Anchorable, MouseInteractive, GameObject):
 		self._size = size
 		self._nine_slice = nine_slice
 		self._state: Any = None
+		self._base_state: Any = None
+		self._focused: bool = False
 		self.images: dict[Any, pygame.Surface] = {}
 
 		self._renderer = cast(SpriteRenderer2D, self.add_component(SpriteRenderer2D))
@@ -43,15 +46,42 @@ class StateObject(Anchorable, MouseInteractive, GameObject):
 		if image_path is not None:
 			self.add_state(None, image_path)
 
+	# ── state lookup / mutation ──────────────────────────────────────────────
+
+	@property
+	def state(self) -> Any:
+		return self._state
+
 	def add_state(self, state: Any, image_path: PathLike) -> None:
-		surface = load_image(image_path, self._size, self._nine_slice)
+		self.add_surface(state, load_image(image_path, self._size, self._nine_slice))
+
+	def add_surface(self, state: Any, surface: pygame.Surface) -> None:
+		"""Register a pre-rendered surface under a state key (no file load)."""
 		self.images[state] = surface
 		if state == self._state:
 			self._renderer.set_image(surface)
 
 	def set_state(self, state: Any) -> None:
 		self._state = state
-		self._renderer.set_image(self._active_surface)
+		if state in self.images:
+			self._renderer.set_image(self._active_surface)
+
+	def set_base_state(self, state: Any) -> None:
+		"""Set the persistent base state (separate from event-driven hover)."""
+		self._base_state = state
+		self.set_state(state)
+
+	@property
+	def focused(self) -> bool:
+		return self._focused
+
+	@focused.setter
+	def focused(self, value: bool) -> None:
+		if value == self._focused:
+			return
+		self._focused = value
+		if self._state in self.images:
+			self._renderer.set_image(self._active_surface)
 
 	@property
 	def _active_surface(self) -> pygame.Surface:
@@ -87,7 +117,7 @@ class HoverableStateObject(StateObject):
 
 	@property
 	def _active_surface(self) -> pygame.Surface:
-		if self._hovered and self._state in self._hover_images:
+		if (self._hovered or self._focused) and self._state in self._hover_images:
 			return self._hover_images[self._state]
 		return self.images[self._state]
 
