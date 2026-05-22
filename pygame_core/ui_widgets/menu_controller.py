@@ -16,7 +16,7 @@ import pygame
 
 
 class MenuController:
-    def __init__(self, buttons: list, audio, switch_up_path, switch_down_path) -> None:
+    def __init__(self, buttons: list, audio=None, switch_up_path=None, switch_down_path=None) -> None:
         self.buttons = buttons
         self.audio = audio
         self.switch_up_path = switch_up_path
@@ -31,7 +31,8 @@ class MenuController:
         button.focused = False
 
     def _swap_focus(self, from_i: int, to_i: int, sound_path) -> None:
-        self.audio.play_sfx(sound_path)
+        if sound_path is not None and self.audio is not None:
+            self.audio.play_sfx(sound_path)
         self._unfocus(self.buttons[from_i])
         self._focus(self.buttons[to_i])
 
