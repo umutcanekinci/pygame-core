@@ -125,6 +125,8 @@ class HoverableStateObject(StateObject):
 		return self.images[self._state]
 
 	def handle_event(self, event, mouse_pos: tuple) -> None:
+		if event.type != pygame.MOUSEMOTION:
+			return
 		was_hovered = self._hovered
 		self._hovered = self.is_mouse_over(mouse_pos)
 		if self._hovered != was_hovered:
