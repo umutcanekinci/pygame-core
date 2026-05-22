@@ -37,12 +37,10 @@ class TextObject(GameObject, Anchorable):
         self.padding = self._parse_padding(padding)
 
         self.states: dict = dict(states) if states else {}
-        if text and "default" not in self.states:
-            self.states["default"] = text
-        self.state: str | None = "default" if "default" in self.states else (
-            next(iter(self.states)) if self.states else None
-        )
-        self.text: str = self.states.get(self.state, "") if self.state is not None else (text or "")
+        if "default" not in self.states:
+            self.states["default"] = text or ""
+        self.state: str = "default"
+        self.text: str = self.states[self.state]
 
         self.add_component(SpriteRenderer2D)
         self._reflow()
