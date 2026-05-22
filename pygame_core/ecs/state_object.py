@@ -117,8 +117,11 @@ class HoverableStateObject(StateObject):
 
 	@property
 	def _active_surface(self) -> pygame.Surface:
-		if (self._hovered or self._focused) and self._state in self._hover_images:
-			return self._hover_images[self._state]
+		if self._hovered or self._focused:
+			if self._state in self._hover_images:
+				return self._hover_images[self._state]
+			if None in self._hover_images:
+				return self._hover_images[None]
 		return self.images[self._state]
 
 	def handle_event(self, event, mouse_pos: tuple) -> None:
