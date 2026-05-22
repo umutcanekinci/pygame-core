@@ -70,6 +70,7 @@ def make_text_factory(assets):
             load_font(cfg, assets),
             cfg.get("color", [255, 255, 255]),
             cfg.get("background_color"),
+            padding=cfg.get("padding"),
             anchor=cfg.get("anchor", "top-left"),
         )
     return make_text_object
