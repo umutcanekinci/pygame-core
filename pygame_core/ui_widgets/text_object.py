@@ -71,8 +71,8 @@ class TextObject(GameObject, Anchorable):
         self.text = self.states.get(state, "") if state is not None else ""
         self._reflow()
 
-    def handle_event(self, event, mouse_position) -> None:
-        super().handle_event(event, mouse_position)
+    def update(self) -> None:
+        super().update()
         if len(self.states) <= 1 or self.rect.parent is None:
             return
         parent_obj = getattr(self.rect.parent, "game_object", None)
