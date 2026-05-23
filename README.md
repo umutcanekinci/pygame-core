@@ -48,7 +48,6 @@ Requires Python 3.12+ and `pygame-ce`.
 | `image` | `load_image`, `scale`, `scale_by`, `nine_slice_scale` |
 | `font` | `load_font` (asset-key first, falls back to `SysFont`) |
 | `sprite_sheet` | `SpriteSheet` (`from_path`, `strip`, `grid`, `frame`) |
-| `color` | Named RGB tuples (`Black`, `White`, `Red`, …) |
 | `database` | `Database` — thin SQLite wrapper, stores `.db` under `databases/` |
 
 ### Panel / UI system
