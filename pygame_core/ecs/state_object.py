@@ -9,7 +9,7 @@ hover surface when the mouse enters the rect (per-state, falls through to base i
 missing). The hover surface is also shown when `focused` is true, so keyboard-focus
 visuals reuse the hover artwork without faking a mouse position.
 """
-from typing import Any, cast
+from typing import Any
 import pygame
 from pygame_core.asset_path import PathLike
 from pygame_core.image import load_image
@@ -20,10 +20,10 @@ from pygame_core.utils import Anchorable, MouseInteractive
 
 
 class StateObject(Anchorable, MouseInteractive, GameObject):
-	def __init__(self, parent: Transform = None,
+	def __init__(self, parent: Transform | None = None,
 	             pos=("CENTER", "CENTER"),
 	             size=(0, 0),
-	             image_path: PathLike = None,
+	             image_path: PathLike | None = None,
 	             nine_slice: int = 0,
 	             anchor: str = "top-left") -> None:
 
@@ -41,7 +41,7 @@ class StateObject(Anchorable, MouseInteractive, GameObject):
 		self._focused: bool = False
 		self.images: dict[Any, pygame.Surface] = {}
 
-		self._renderer = cast(SpriteRenderer2D, self.add_component(SpriteRenderer2D))
+		self._renderer = self.add_component(SpriteRenderer2D)
 
 		if image_path is not None:
 			self.add_state(None, image_path)
@@ -97,11 +97,11 @@ class StateObject(Anchorable, MouseInteractive, GameObject):
 
 
 class HoverableStateObject(StateObject):
-	def __init__(self, parent: Transform = None,
+	def __init__(self, parent: Transform | None = None,
 	             pos=("CENTER", "CENTER"),
 	             size=(None, None),
-	             image_path: PathLike = None,
-	             hover_image_path: PathLike = None,
+	             image_path: PathLike | None = None,
+	             hover_image_path: PathLike | None = None,
 	             nine_slice: int = 0,
 	             anchor: str = "top-left") -> None:
 		super().__init__(parent, pos, size, image_path, nine_slice, anchor)
@@ -110,7 +110,7 @@ class HoverableStateObject(StateObject):
 		if hover_image_path is not None:
 			self._hover_images[None] = load_image(hover_image_path, self._size, self._nine_slice)
 
-	def add_state(self, state: Any, image_path: PathLike, hover_image_path: PathLike = None) -> None:
+	def add_state(self, state: Any, image_path: PathLike, hover_image_path: PathLike | None = None) -> None:
 		super().add_state(state, image_path)
 		if hover_image_path is not None:
 			self._hover_images[state] = load_image(hover_image_path, self._size, self._nine_slice)

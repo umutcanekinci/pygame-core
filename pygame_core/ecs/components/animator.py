@@ -80,6 +80,9 @@ class Animator(Component):
 		self._apply()
 
 	def _advance(self, steps: int) -> None:
+		if self._clip is None:
+			return
+
 		end = len(self._clip.frames) - 1
 		nxt = self._frame + steps
 		if nxt <= end:
@@ -91,6 +94,9 @@ class Animator(Component):
 			self._playing = False
 
 	def _apply(self) -> None:
+		if self._clip is None:
+			return
+
 		renderer = self.get_component(SpriteRenderer2D)
 		if renderer is not None:
 			renderer.set_image(self._clip.frames[self._frame])

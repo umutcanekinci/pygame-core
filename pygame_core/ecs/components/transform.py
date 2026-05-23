@@ -22,7 +22,7 @@ class Transform(Component, pygame.Rect, Anchorable):
 			position = (position[0] + self.parent.x, position[1] + self.parent.y)
 		self.topleft = position
 
-	def set_parent(self, parent: Transform):
+	def set_parent(self, parent: Transform | None):
 		if not parent:
 			self.parent = parent
 			return

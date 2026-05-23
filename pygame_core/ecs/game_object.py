@@ -1,9 +1,11 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, TypeVar
 from pygame_core.ecs.components.component import Component, Behaviour
 from pygame_core.ecs.components.transform import Transform
 import pygame
+
+C = TypeVar("C", bound=Component)
 
 
 @dataclass
@@ -72,7 +74,7 @@ class GameObject:
 		fire_at = pygame.time.get_ticks() + int(delay * 1000)
 		self._scheduled.append(_ScheduledCall(callback, fire_at, int(interval * 1000)))
 
-	def cancel_invoke(self, callback: Callable = None) -> None:
+	def cancel_invoke(self, callback: Callable | None = None) -> None:
 		if callback is None:
 			self._scheduled.clear()
 		else:
@@ -102,7 +104,7 @@ class GameObject:
 	@game_object.setter
 	def game_object(self, value): ...
 
-	def add_component(self, component_type: type[Component], **kwargs) -> Component:
+	def add_component(self, component_type: Callable[..., C], **kwargs) -> C:
 		component = component_type(**kwargs)
 		component.game_object = self
 		self._components[component_type.__name__] = component
@@ -110,7 +112,7 @@ class GameObject:
 			component.awake()
 		return component
 
-	def get_component(self, component_type: type[Component]) -> Component | None:
+	def get_component(self, component_type: type[C]) -> C | None:
 		return self._components.get(component_type.__name__)
 
 	def handle_event(self, event: pygame.event.Event, mouse_position) -> None:

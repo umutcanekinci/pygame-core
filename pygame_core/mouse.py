@@ -7,7 +7,7 @@ class Mouse:
     def __init__(self, tile_size=None) -> None:
         self.position = (0, 0)
         self.tile_size = tile_size
-        self.cursor: GameObject = None
+        self.cursor: GameObject | None = None
 
         if self.tile_size:
             self.tile_pos = (0, 0)

@@ -19,7 +19,7 @@ class TextObject(GameObject, Anchorable):
         parent,
         position,
         text: str = "",
-        font: pygame.font.Font = None,
+        font: pygame.font.Font | None = None,
         color = (255, 255, 255),
         background_color = None,
         padding = None,

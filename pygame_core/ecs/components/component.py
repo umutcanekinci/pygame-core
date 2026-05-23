@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+from typing import TypeVar
+
+T = TypeVar("T", bound="Component")
+
 
 class Component:
 	def __init__(self):
 		self.game_object = None
 
-	def get_component(self, component_type: type[Component]) -> Component | None:
+	def get_component(self, component_type: type[T]) -> T | None:
 		return self.game_object.get_component(component_type)
 
 

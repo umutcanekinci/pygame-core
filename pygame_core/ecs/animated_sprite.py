@@ -9,8 +9,6 @@ same class works for UI panels and free game-world entities.
 	                             frame_count=4, fps=8)
 	coin.update(); coin.draw(surface)
 """
-from typing import cast
-
 import pygame
 
 from pygame_core.sprite_sheet import SpriteSheet
@@ -36,7 +34,7 @@ class AnimatedSprite(GameObject):
 				 fps: float = 12.0,
 				 loop: bool = True,
 				 name: str = "animated_sprite") -> None:
-		if not frames:
+		if frames is None or not frames:
 			raise ValueError("AnimatedSprite requires at least one frame")
 		super().__init__(name=name)
 
@@ -50,19 +48,28 @@ class AnimatedSprite(GameObject):
 		self.rect.set_position(pos)
 
 		self.add_component(SpriteRenderer2D)
-		self.animator = cast(Animator, self.add_component(Animator))
+		self.animator = self.add_component(Animator)
 		self.animator.add_clip("default", AnimationClip(frames, fps=fps, loop=loop))
 		self.animator.play("default")
 
 	@staticmethod
 	def _resolve_size(size, src_size: tuple[int, int]) -> tuple[int, int]:
-		"""Normalise the caller's size to a (w, h) 2-tuple, defaulting to src_size."""
+		"""Normalize the caller's size to a (w, h) 2-tuple, defaulting to src_size."""
 		if isinstance(size, pygame.Rect):
 			size = size.size
-		size = tuple(size) if size else (0, 0)
+
+		if not size:
+			return src_size
+
 		if len(size) != 2:
 			raise ValueError(f"AnimatedSprite size must be (w, h), got {size!r}")
-		return size if size != (0, 0) else src_size
+
+		w, h = size
+
+		if (w, h) == (0, 0, 0):
+			return src_size
+
+		return w, h
 
 	def add_clip(self, name: str, frames: list[pygame.Surface], fps: float = 12.0, loop: bool = True) -> None:
 		self.animator.add_clip(name, AnimationClip(frames, fps=fps, loop=loop))

@@ -45,15 +45,18 @@ class GameAudio:
 
     # ── sfx ───────────────────────────────────────────────────────────────────
 
-    def play_sfx(self, path: str) -> None:
+    @staticmethod
+    def play_sfx(path: str) -> None:
         mixer.Channel(SFX_CHANNEL).play(mixer.Sound(str(path)))
 
     # ── volume ────────────────────────────────────────────────────────────────
 
-    def music_volume(self) -> float:
+    @staticmethod
+    def music_volume() -> float:
         return mixer.Channel(MUSIC_CHANNEL).get_volume()
 
-    def sfx_volume(self) -> float:
+    @staticmethod
+    def sfx_volume() -> float:
         return mixer.Channel(SFX_CHANNEL).get_volume()
 
     def set_music_volume(self, volume: float) -> None:
