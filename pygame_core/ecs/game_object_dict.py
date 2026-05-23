@@ -2,27 +2,36 @@ import pygame
 from typing import Any
 
 
-class GameObjectDict(dict[str, Any]):
+class GameObjectDict:
     def __init__(self) -> None:
-        super().__init__()
+        self._objects: dict[str, Any] = {}
 
     def __getitem__(self, key: str) -> Any:
-        return super().__getitem__(key)
+        return self._objects[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self._objects[key] = value
+
+    def __contains__(self, key: object) -> bool:
+        return key in self._objects
+
+    def values(self):
+        return self._objects.values()
 
     def handle_event(self, event: pygame.event.Event, mouse_position) -> None:
-        for obj in self.values():
+        for obj in self._objects.values():
             if not hasattr(obj, "handle_event"): continue
             if hasattr(obj, "active") and not obj.active: continue
             obj.handle_event(event, mouse_position)
 
-    def update(self) -> None:  # type: ignore[override]
-        for obj in self.values():
+    def update(self) -> None:
+        for obj in self._objects.values():
             if not hasattr(obj, "update"): continue
             if hasattr(obj, "active") and not obj.active: continue
             obj.update()
 
     def draw(self, surface) -> None:
-        for obj in self.values():
+        for obj in self._objects.values():
             if not hasattr(obj, "draw"): continue
             if hasattr(obj, "active") and not obj.active: continue
             obj.draw(surface)
