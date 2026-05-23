@@ -1,4 +1,3 @@
-# pygame_core/asset_path.py
 import os
 from pathlib import Path
 from typing import Union

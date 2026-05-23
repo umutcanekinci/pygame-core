@@ -1,4 +1,3 @@
-# pygame_core/asset_manager.py
 from pathlib import Path
 import pygame
 import yaml

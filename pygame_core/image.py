@@ -90,5 +90,3 @@ def nine_slice_scale(image: pygame.Surface, target_size: tuple[int, int], corner
 
 	return result
 
-
-Image = load_image  # legacy alias mentioned in README

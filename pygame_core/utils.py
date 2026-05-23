@@ -83,6 +83,3 @@ class Anchorable:
             y + parent_size[1] * ay - obj_size[1] * ay,
         )
 
-
-# Back-compat alias — old code that mixed in `Centerable` keeps working.
-Centerable = Anchorable
