@@ -39,7 +39,7 @@ class PanelManager:
         self.add_panel(panel)
         self._panels[panel][name] = obj
 
-    def add_object_to_all(self, panels: tuple[str], name: str, obj) -> None:
+    def add_object_to_all(self, panels: tuple[str, ...], name: str, obj) -> None:
         for panel in panels:
             self.add_object(panel, name, obj)
 

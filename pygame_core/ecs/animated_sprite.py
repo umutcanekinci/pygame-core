@@ -66,7 +66,7 @@ class AnimatedSprite(GameObject):
 
 		w, h = size
 
-		if (w, h) == (0, 0, 0):
+		if (w, h) == (0, 0):
 			return src_size
 
 		return w, h
