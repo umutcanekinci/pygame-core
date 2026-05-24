@@ -1,5 +1,4 @@
 import pygame
-from pygame_core.asset_path import *
 
 _cache: dict[str, pygame.Surface] = {}
 
@@ -31,7 +30,7 @@ def load_image(path, size=None, nine_slice: int = 0, return_size: bool = False):
 	if size[1] == 1 / 3: size[1] = img.get_height() // 5
 
 	if nine_slice > 0:
-		result = nine_slice_scale(img, tuple(size), nine_slice)
+		result = nine_slice_scale(img, (size[0], size[1]), nine_slice)
 	else:
 		result = pygame.transform.scale(img, size)
 	return (result, size) if return_size else result
@@ -72,19 +71,17 @@ def nine_slice_scale(image: pygame.Surface, target_size: tuple[int, int], corner
 		result.blit(piece, (dx, dy))
 
 	c = corner
-	sw, sh = src_w, src_h
-	dw, dh = dst_w, dst_h
 
 	# corners (no scaling)
-	_blit(0,      0,      c, c,  0,      0,      c, c)
-	_blit(sw - c, 0,      c, c,  dw - c, 0,      c, c)
-	_blit(0,      sh - c, c, c,  0,      dh - c, c, c)
-	_blit(sw - c, sh - c, c, c,  dw - c, dh - c, c, c)
+	_blit(0,         0,         c, c,  0,         0,         c, c)
+	_blit(src_w - c, 0,         c, c,  dst_w - c, 0,         c, c)
+	_blit(0,         src_h - c, c, c,  0,         dst_h - c, c, c)
+	_blit(src_w - c, src_h - c, c, c,  dst_w - c, dst_h - c, c, c)
 	# edges (stretch in one axis)
-	_blit(c, 0,      msx, c,   c, 0,      mdx, c)
-	_blit(c, sh - c, msx, c,   c, dh - c, mdx, c)
-	_blit(0,      c, c, msy,   0,      c, c, mdy)
-	_blit(sw - c, c, c, msy,   dw - c, c, c, mdy)
+	_blit(c,         0,         msx, c,   c,         0,         mdx, c)
+	_blit(c,         src_h - c, msx, c,   c,         dst_h - c, mdx, c)
+	_blit(0,         c,         c, msy,   0,         c,         c, mdy)
+	_blit(src_w - c, c,         c, msy,   dst_w - c, c,         c, mdy)
 	# center (stretch in both axes)
 	_blit(c, c, msx, msy,  c, c, mdx, mdy)
 

@@ -6,7 +6,7 @@ import os
 class Database:
     def __init__(self, name):
         self.name = name
-        self.connection = None
+        self.connection: sqlite3.Connection | None = None
 
     def connect(self) -> bool:
         try:
@@ -22,6 +22,7 @@ class Database:
             return True
 
     def get_cursor(self):
+        assert self.connection is not None, "Database not connected"
         return self.connection.cursor()
 
     def execute_safely(self, query: str, fetch: bool = False, *, params: tuple = ()) -> list[tuple] | None:
@@ -44,7 +45,9 @@ class Database:
             return sys.exit()
 
     def commit(self):
+        assert self.connection is not None, "Database not connected"
         self.connection.commit()
 
     def disconnect(self):
+        assert self.connection is not None, "Database not connected"
         self.connection.close()

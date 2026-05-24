@@ -5,9 +5,9 @@ class Rigidbody2D(Component):
 	def __init__(self):
 		super().__init__()
 		self.velocity = Vector2(0, 0)
-		self._float_pos = None
+		self._float_pos: Vector2 | None = None
 
-	def set_velocity(self, velocity: tuple):
+	def set_velocity(self, velocity: Vector2 | tuple[float, float]):
 		self.velocity = Vector2(velocity)
 		self._float_pos = None  # re-sync from transform on next update
 

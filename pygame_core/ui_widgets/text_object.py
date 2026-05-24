@@ -39,7 +39,7 @@ class TextObject(GameObject, Anchorable):
         self.states: dict = dict(states) if states else {}
         if "default" not in self.states:
             self.states["default"] = text or ""
-        self.state: str = "default"
+        self.state: str | None = "default"
         self.text: str = self.states[self.state]
 
         self.add_component(SpriteRenderer2D)
@@ -93,6 +93,7 @@ class TextObject(GameObject, Anchorable):
         return self.state
 
     def _reflow(self) -> None:
+        assert self.font is not None, "TextObject requires a font to render"
         text_surface = self.font.render(self.text, True, self.color)
         top, right, bottom, left = self.padding
 
@@ -105,7 +106,9 @@ class TextObject(GameObject, Anchorable):
                 surface.fill(self.background_color)
             surface.blit(text_surface, (left, top))
 
-        self.get_component(SpriteRenderer2D).set_image(surface)
+        renderer = self.get_component(SpriteRenderer2D)
+        assert renderer is not None
+        renderer.set_image(surface)
         self.rect.size = surface.get_size()
         self.rect.set_position(self._position_spec)
 

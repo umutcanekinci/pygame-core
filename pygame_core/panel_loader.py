@@ -75,7 +75,7 @@ class PanelLoader:
         x, y = pos
         return (x, y)
 
-    def _resolve_size(self, size: Any) -> tuple:
+    def _resolve_size(self, size: Any) -> tuple | Transform:
         if size == "WINDOW":
             return self.window_transform
         if isinstance(size, list) and len(size) == 2:

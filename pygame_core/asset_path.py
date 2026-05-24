@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Union
 
 
-class AssetPath:
+class AssetPath(os.PathLike):
     """Game asset path — string-compatible ama type-safe."""
 
     def __init__(self, name: str, folder: str = "", extension: str = "png",
@@ -46,4 +46,4 @@ class SoundPath(AssetPath):
         super().__init__(name, folder, extension, base="assets/sounds")
 
 
-PathLike = Union[str, ImagePath, os.PathLike]
+PathLike = Union[str, "os.PathLike[str]"]

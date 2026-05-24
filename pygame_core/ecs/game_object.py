@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Callable, TypeVar
+from typing import Callable, TypeVar, cast
 from pygame_core.ecs.components.component import Component, Behaviour
 from pygame_core.ecs.components.transform import Transform
 import pygame
@@ -113,7 +113,7 @@ class GameObject:
 		return component
 
 	def get_component(self, component_type: type[C]) -> C | None:
-		return self._components.get(component_type.__name__)
+		return cast("C | None", self._components.get(component_type.__name__))
 
 	def handle_event(self, event: pygame.event.Event, mouse_position) -> None:
 		if not self.active:

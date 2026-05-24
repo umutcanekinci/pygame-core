@@ -10,7 +10,7 @@ class Application:
         self._is_running = False
         self._fps = fps
         self._is_in_debug_mode = False
-        self.size: tuple[int, int] | None = None
+        self.size: tuple[int, int] = size
         self.mouse_pos = (0, 0)
         self.mouse = mouse if mouse is not None else Mouse()
 

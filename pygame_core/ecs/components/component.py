@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar("T", bound="Component")
 
 
 class Component:
 	def __init__(self):
-		self.game_object = None
+		self.game_object: Any = None
 
 	def get_component(self, component_type: type[T]) -> T | None:
+		assert self.game_object is not None, "Component is not attached to a GameObject"
 		return self.game_object.get_component(component_type)
 
 

@@ -3,21 +3,26 @@
 Replaces both 2048's GameAudioMixin (channel-based, no pause/resume) and
 tower-defense's SoundManagerExtension (mixer.music-based, music-only).
 """
+import os
+from typing import Union
+
 from pygame import mixer
 
 MUSIC_CHANNEL = 0
 SFX_CHANNEL   = 1
 
+PathArg = Union[str, "os.PathLike[str]"]
+
 
 class GameAudio:
-    def __init__(self, music_path: str | None = None, autoplay: bool = True) -> None:
+    def __init__(self, music_path: PathArg | None = None, autoplay: bool = True) -> None:
         self._music_paused = False
         if music_path is not None and autoplay:
             self.play_music(music_path)
 
     # ── music ─────────────────────────────────────────────────────────────────
 
-    def play_music(self, path: str, loops: int = -1) -> None:
+    def play_music(self, path: PathArg, loops: int = -1) -> None:
         mixer.Channel(MUSIC_CHANNEL).play(mixer.Sound(str(path)), loops)
         self._music_paused = False
 
@@ -46,7 +51,7 @@ class GameAudio:
     # ── sfx ───────────────────────────────────────────────────────────────────
 
     @staticmethod
-    def play_sfx(path: str) -> None:
+    def play_sfx(path: PathArg) -> None:
         mixer.Channel(SFX_CHANNEL).play(mixer.Sound(str(path)))
 
     # ── volume ────────────────────────────────────────────────────────────────

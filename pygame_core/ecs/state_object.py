@@ -40,6 +40,7 @@ class StateObject(Anchorable, MouseInteractive, GameObject):
 		self._base_state: Any = None
 		self._focused: bool = False
 		self.images: dict[Any, pygame.Surface] = {}
+		self.on_click_sound: Any = None
 
 		self._renderer = self.add_component(SpriteRenderer2D)
 

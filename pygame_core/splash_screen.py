@@ -1,4 +1,9 @@
+import os
+from typing import Union
+
 import pygame
+
+PathArg = Union[str, "os.PathLike[str]"]
 
 
 class SplashScreen:
@@ -9,7 +14,7 @@ class SplashScreen:
 	handled by the caller).  When the last image is done, is_done = True.
 	"""
 
-	def __init__(self, image_paths: list[str], fade_ms: int = 1500, hold_ms: int = 1000) -> None:
+	def __init__(self, image_paths: list[PathArg], fade_ms: int = 1500, hold_ms: int = 1000) -> None:
 		self._images         = [pygame.image.load(p).convert_alpha() for p in image_paths]
 		self._fade_ms        = fade_ms
 		self._hold_ms        = hold_ms

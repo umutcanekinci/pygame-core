@@ -1,10 +1,14 @@
+from typing import Any
+
 import pygame
 
 
 class MouseInteractive:
     """Adds is_mouse_over and is_clicked behavior."""
-    rect: pygame.Rect
-    parent: object  # optional, included so the parent object's rect is factored in too
+    # `rect` may be a plain pygame.Rect or a Transform (which subclasses pygame.Rect
+    # but adds extra methods). Declared as Any to allow either in subclasses.
+    rect: Any
+    parent: Any  # optional, included so the parent object's rect is factored in too
     visible: bool = True
 
     # Press-tracking instance state
