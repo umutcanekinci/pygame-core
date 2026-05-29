@@ -65,7 +65,8 @@ class Application:
             self.update()
             self.draw()
             self.draw_mouse()
-            self.draw_debug()
+            if self._is_in_debug_mode:
+                self.draw_debug()
             pygame.display.update()
 
     def _listen_inputs(self) -> None:
