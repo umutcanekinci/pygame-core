@@ -51,6 +51,48 @@ class JSONCodec:
         return json.loads(raw.decode("utf-8"))
 
 
+class TypedJSONCodec:
+    """JSON codec that can also carry registered application objects — safely.
+
+    Like JSONCodec it speaks plain JSON (so a hostile peer can at worst feed you
+    bad data, never run code), but it round-trips classes that expose
+    ``to_dict()`` / ``from_dict()``:
+
+    - encode: any object json can't handle is passed to ``to_dict()``, which must
+      tag the dict with a ``"__type__"`` the decoder will recognise and return a
+      fully plain (already-nested) structure.
+    - decode: every dict carrying a known ``"__type__"`` is rebuilt via that
+      class's ``from_dict()``; object_hook runs bottom-up, so nested objects are
+      already reconstructed when their container is built.
+
+    The ``registry`` (type tag -> class) is supplied by the application, so this
+    class stays game-agnostic — it knows the protocol, not your classes.
+    """
+
+    TYPE_KEY = "__type__"
+
+    def __init__(self, registry: dict) -> None:
+        self._registry = dict(registry)
+
+    def encode(self, message: Any) -> bytes:
+        return json.dumps(message, default=self._to_dict, separators=(",", ":")).encode(
+            "utf-8"
+        )
+
+    def decode(self, raw: bytes) -> Any:
+        return json.loads(raw.decode("utf-8"), object_hook=self._from_dict)
+
+    def _to_dict(self, obj: Any):
+        to_dict = getattr(obj, "to_dict", None)
+        if callable(to_dict):
+            return to_dict()
+        raise TypeError(f"{type(obj).__name__} is not JSON serializable")
+
+    def _from_dict(self, data: dict):
+        cls = self._registry.get(data.get(self.TYPE_KEY))
+        return cls.from_dict(data) if cls is not None else data
+
+
 class PickleCodec:
     """Sends whole Python objects.
 
