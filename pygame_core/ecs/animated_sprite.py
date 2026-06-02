@@ -9,6 +9,9 @@ same class works for UI panels and free game-world entities.
 	                             frame_count=4, fps=8)
 	coin.update(); coin.draw(surface)
 """
+
+from __future__ import annotations
+
 import pygame
 
 from pygame_core.sprite_sheet import SpriteSheet

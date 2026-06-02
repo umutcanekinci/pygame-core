@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from math import atan2, degrees
 
 from pygame import Vector2

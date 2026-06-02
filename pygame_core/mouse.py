@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pygame
 
 from pygame_core.ecs.game_object import GameObject

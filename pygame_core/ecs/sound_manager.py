@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pygame import mixer
 
 class SoundManager:

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pygame import Vector2
 from pygame_core.ecs.components.component import Component
 

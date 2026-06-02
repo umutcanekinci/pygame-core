@@ -3,6 +3,9 @@
 Replaces both 2048's GameAudioMixin (channel-based, no pause/resume) and
 tower-defense's SoundManagerExtension (mixer.music-based, music-only).
 """
+
+from __future__ import annotations
+
 import os
 from typing import Union
 

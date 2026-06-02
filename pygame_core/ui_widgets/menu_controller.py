@@ -12,6 +12,9 @@ are declared in YAML as regular image objects with child text objects.
 The `audio` arg only needs a `.play_sfx(path)` method; the up/down sound
 paths are passed in so projects control their own assets.
 """
+
+from __future__ import annotations
+
 import pygame
 
 

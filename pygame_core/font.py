@@ -3,6 +3,9 @@
 Looks up `cfg[font_key]` in the asset manifest first; if no font is registered
 under that name, treats it as a system font and falls back to SysFont.
 """
+
+from __future__ import annotations
+
 import pygame
 
 

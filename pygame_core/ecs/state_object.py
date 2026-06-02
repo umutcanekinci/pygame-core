@@ -9,6 +9,9 @@ hover surface when the mouse enters the rect (per-state, falls through to base i
 missing). The hover surface is also shown when `focused` is true, so keyboard-focus
 visuals reuse the hover artwork without faking a mouse position.
 """
+
+from __future__ import annotations
+
 from typing import Any
 import pygame
 from pygame_core.asset_path import PathLike

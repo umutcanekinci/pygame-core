@@ -11,6 +11,9 @@ remain valid even if the source sheet is later mutated or evicted from a
 caching layer. Pass copy=False for a zero-allocation subsurface view when
 you know the source will outlive the frames.
 """
+
+from __future__ import annotations
+
 import pygame
 from pygame_core.asset_path import PathLike
 from pygame_core.image import load_image

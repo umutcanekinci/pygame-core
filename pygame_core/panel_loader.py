@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pygame_core.asset_manager import AssetManager
 from pathlib import Path
 from typing import Any, Callable
@@ -17,6 +19,10 @@ class PanelLoader:
         self.assets = asset_manager
         self._factories: dict[str, ObjectFactory] = {}
         self._default_type: str | None = None
+        # Global UI scale applied to every object's geometry at load time. 1.0 is
+        # the authored desktop layout; callers bump it on touch devices to make
+        # panels/buttons/text bigger (see _scale_def).
+        self.scale: float = 1.0
 
     def register(self, type_name: str, factory: ObjectFactory, *, default: bool = False) -> None:
         self._factories[type_name] = factory
@@ -65,9 +71,49 @@ class PanelLoader:
         if "hover" in obj_def:
             obj_def["hover"] = self.assets.image_path(obj_def["hover"])
 
+        self._scale_def(obj_def, window_parented=parent_name is None)
+
         factory = self._factories[type_name]
         obj = factory(obj_def, parent)
         self.pm.add_object(tab, name, obj)
+
+    def _scale_def(self, obj_def: dict, window_parented: bool) -> None:
+        """Apply the global UI scale (self.scale) to one object's geometry, in place.
+
+        size / font_size / text_size always scale. Positions parented to another
+        object scale about that parent's origin, so child offsets grow together
+        with the (also-scaled) parent box. Window-parented positions instead scale
+        about the window centre, so fixed chrome (title, counters) moves outward as
+        the panels grow rather than being swallowed by them. Non-numeric values
+        ("CENTER", "WINDOW", ...) pass through untouched.
+        """
+        k = self.scale
+        if k == 1.0:
+            return
+
+        size = obj_def.get("size")
+        if isinstance(size, list) and len(size) == 2 and all(
+            isinstance(n, (int, float)) for n in size
+        ):
+            obj_def["size"] = [round(size[0] * k), round(size[1] * k)]
+
+        for key in ("font_size", "text_size"):
+            v = obj_def.get(key)
+            if isinstance(v, (int, float)):
+                obj_def[key] = max(1, round(v * k))
+
+        pos = obj_def.get("position")
+        if isinstance(pos, list) and len(pos) == 2:
+            if window_parented:
+                cx, cy = self.window_transform.width / 2, self.window_transform.height / 2
+                obj_def["position"] = [
+                    round(cx + (pos[0] - cx) * k) if isinstance(pos[0], (int, float)) else pos[0],
+                    round(cy + (pos[1] - cy) * k) if isinstance(pos[1], (int, float)) else pos[1],
+                ]
+            else:
+                obj_def["position"] = [
+                    round(c * k) if isinstance(c, (int, float)) else c for c in pos
+                ]
 
     def _resolve_position(self, pos: Any) -> tuple:
         if not isinstance(pos, list) or len(pos) != 2:

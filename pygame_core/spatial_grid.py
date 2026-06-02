@@ -8,6 +8,8 @@ each lookup touches only the handful of objects in adjacent cells.
 Rebuild it each frame for moving objects; build it once for static ones.
 """
 
+from __future__ import annotations
+
 
 class SpatialGrid:
     def __init__(self, cell_size: int) -> None:

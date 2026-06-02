@@ -5,6 +5,9 @@ PanelLoader invokes for entries with the matching `type:` key. Projects that
 need project-specific factories (e.g. menus, buttons) define their own and
 register them alongside these.
 """
+
+from __future__ import annotations
+
 import pygame
 
 from pygame_core.font import load_font

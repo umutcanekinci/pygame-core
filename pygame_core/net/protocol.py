@@ -13,6 +13,8 @@ to read from an untrusted peer. Pickle is offered too, but read the warning on
 `PickleCodec` before you reach for it.
 """
 
+from __future__ import annotations
+
 import json
 import pickle
 import socket
