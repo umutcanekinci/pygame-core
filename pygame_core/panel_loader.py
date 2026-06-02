@@ -19,10 +19,13 @@ class PanelLoader:
         self.assets = asset_manager
         self._factories: dict[str, ObjectFactory] = {}
         self._default_type: str | None = None
-        # Global UI scale applied to every object's geometry at load time. 1.0 is
-        # the authored desktop layout; callers bump it on touch devices to make
-        # panels/buttons/text bigger (see _scale_def).
+        # Global UI scale applied to every object's geometry at load time (see
+        # _scale_def). authored_size is the resolution the YAML positions were
+        # written for; when the actual window differs (e.g. a lower mobile render
+        # resolution), window-parented chrome is remapped from the authored centre
+        # to the actual centre so it tracks the panel instead of drifting off.
         self.scale: float = 1.0
+        self.authored_size: tuple[int, int] | None = None
 
     def register(self, type_name: str, factory: ObjectFactory, *, default: bool = False) -> None:
         self._factories[type_name] = factory
@@ -80,16 +83,25 @@ class PanelLoader:
     def _scale_def(self, obj_def: dict, window_parented: bool) -> None:
         """Apply the global UI scale (self.scale) to one object's geometry, in place.
 
-        size / font_size / text_size always scale. Positions parented to another
-        object scale about that parent's origin, so child offsets grow together
-        with the (also-scaled) parent box. Window-parented positions instead scale
-        about the window centre, so fixed chrome (title, counters) moves outward as
-        the panels grow rather than being swallowed by them. Non-numeric values
-        ("CENTER", "WINDOW", ...) pass through untouched.
+        size / font_size / text_size always scale by `scale`. Positions parented
+        to another object scale about that parent's origin, so child offsets grow
+        with the (also-scaled) parent box. Window-parented positions are remapped
+        from the authored centre to the actual-window centre and their spread
+        scaled by `scale`, so fixed chrome (title, counters) tracks the panel and
+        stays on-screen even when the window is a different size/resolution than
+        the layout was authored for. Non-numeric values ("CENTER", "WINDOW", ...)
+        pass through untouched.
         """
         k = self.scale
-        if k == 1.0:
-            return
+        authored = self.authored_size or (
+            self.window_transform.width,
+            self.window_transform.height,
+        )
+        same_canvas = (authored[0] == self.window_transform.width) and (
+            authored[1] == self.window_transform.height
+        )
+        if k == 1.0 and same_canvas:
+            return  # desktop: authored layout, no scaling needed
 
         size = obj_def.get("size")
         if isinstance(size, list) and len(size) == 2 and all(
@@ -105,10 +117,12 @@ class PanelLoader:
         pos = obj_def.get("position")
         if isinstance(pos, list) and len(pos) == 2:
             if window_parented:
-                cx, cy = self.window_transform.width / 2, self.window_transform.height / 2
+                # Map authored-window coords → actual-window coords about centre.
+                acx, acy = self.window_transform.width / 2, self.window_transform.height / 2
+                ocx, ocy = authored[0] / 2, authored[1] / 2
                 obj_def["position"] = [
-                    round(cx + (pos[0] - cx) * k) if isinstance(pos[0], (int, float)) else pos[0],
-                    round(cy + (pos[1] - cy) * k) if isinstance(pos[1], (int, float)) else pos[1],
+                    round(acx + (pos[0] - ocx) * k) if isinstance(pos[0], (int, float)) else pos[0],
+                    round(acy + (pos[1] - ocy) * k) if isinstance(pos[1], (int, float)) else pos[1],
                 ]
             else:
                 obj_def["position"] = [
