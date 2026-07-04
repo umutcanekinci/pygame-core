@@ -1,3 +1,8 @@
+# Defer annotation evaluation so self-referential hints like `parent: Transform`
+# don't raise NameError on Python < 3.14 (pre-PEP-649). Required for the 3.12+
+# support floor.
+from __future__ import annotations
+
 import pygame
 from pygame_core.utils import Anchorable
 from pygame_core.ecs.components.component import Component
