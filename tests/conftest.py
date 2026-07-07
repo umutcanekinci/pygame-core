@@ -9,6 +9,9 @@ import sys
 # (e.g. in CI) without opening a real window. Must be set before pygame is
 # imported anywhere.
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+# Application.init_pygame() also calls mixer.init(); dummy audio avoids
+# probing for a real sound device on headless CI runners.
+os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 # Make the helper module in this directory importable as `import _util`.
 sys.path.insert(0, os.path.dirname(__file__))
