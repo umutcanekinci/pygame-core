@@ -12,6 +12,7 @@ requires-python = ">=3.12"
 dependencies = [
     "pygame-ce",
     "pyyaml",
+    "pytmx",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",

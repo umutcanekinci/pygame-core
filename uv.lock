@@ -72,6 +72,7 @@ version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "pygame-ce" },
+    { name = "pytmx" },
     { name = "pyyaml" },
 ]
 
@@ -83,6 +84,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "pygame-ce" },
+    { name = "pytmx" },
     { name = "pyyaml" },
 ]
 
@@ -112,6 +114,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e4/47/b9efed96c114afcfa3c9d3fe98a76a1d14c74a9e266d397cf6eb64be5e01/pytest-9.1.1.tar.gz", hash = "sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313", size = 1636369, upload-time = "2026-06-19T10:58:32.857Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/24/25/1de2678b631f5a49215c6c96fff41ba892b0a34df68d6d80292b1b48aa7f/pytest-9.1.1-py3-none-any.whl", hash = "sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c", size = 386536, upload-time = "2026-06-19T10:58:31.347Z" },
+]
+
+[[package]]
+name = "pytmx"
+version = "3.32"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/04/4c/b5f720f7b7c4dc601365e1b2464a4434b2c5516ca22c59cb3c26a9ce4947/PyTMX-3.32.tar.gz", hash = "sha256:858fd8338f8e7de0e7967604f008022c26735ab98780b2c5d94d2e2c2f5809ca", size = 28026, upload-time = "2023-06-13T15:46:58.119Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/35/e0/fd0a2d2b93599dec876158fe7fccb8c3e8096844a5a4110dd5bc67377128/PyTMX-3.32-py3-none-any.whl", hash = "sha256:4da4c01133dfcb2746cb4e7f46ea1aef21d56119ab044f8f77b9906dea5fbccb", size = 24468, upload-time = "2023-06-13T15:46:56.341Z" },
 ]
 
 [[package]]
