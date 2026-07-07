@@ -1,3 +1,27 @@
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pygame-core"
+version = "0.1.1"
+description = "Shared pygame utilities for personal game projects"
+readme = "README.md"
+authors = [{ name = "Umutcan Ekinci", email = "umutcannekinci@gmail.com" }]
+requires-python = ">=3.12"
+dependencies = [
+    "pygame-ce",
+    "pyyaml",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Intended Audience :: Developers",
+    "Topic :: Games/Entertainment",
+    "Topic :: Software Development :: Libraries",
+]
+
+[tool.setuptools.packages.find]
+include = ["pygame_core*"]
