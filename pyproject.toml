@@ -25,3 +25,12 @@ classifiers = [
 
 [tool.setuptools.packages.find]
 include = ["pygame_core*"]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: real-socket loopback tests (slower)",
+]
