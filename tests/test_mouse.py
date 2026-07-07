@@ -69,6 +69,23 @@ def test_update_reads_the_real_mouse_position(monkeypatch):
     assert mouse.position == (123, 45)
 
 
+def test_default_scale_is_identity():
+    assert Mouse().scale == (1.0, 1.0)
+
+
+def test_update_applies_scale_to_convert_physical_to_logical_position(monkeypatch):
+    """Application keeps this in sync with the ratio between the real OS
+    window and the game's fixed logical render resolution, so a click at
+    physical (100, 100) in a half-size window lands at logical (200, 200)."""
+    monkeypatch.setattr(pygame.mouse, "get_pos", lambda: (100, 100))
+    mouse = Mouse()
+    mouse.scale = (2.0, 2.0)
+
+    mouse.update()
+
+    assert mouse.position == (200.0, 200.0)
+
+
 def test_update_computes_tile_pos_when_tile_size_given(monkeypatch):
     monkeypatch.setattr(pygame.mouse, "get_pos", lambda: (100, 65))
     mouse = Mouse(tile_size=32)

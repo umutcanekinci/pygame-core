@@ -10,6 +10,10 @@ class Mouse:
         self.position = (0, 0)
         self.tile_size = tile_size
         self.cursor: GameObject | None = None
+        # physical (real OS window) -> logical (game's design resolution)
+        # factor; Application keeps this in sync whenever the actual window
+        # size changes, since the game always thinks in logical coordinates.
+        self.scale = (1.0, 1.0)
 
         if self.tile_size:
             self.tile_pos = (0, 0)
@@ -22,7 +26,9 @@ class Mouse:
         self.cursor = image
 
     def update(self) -> None:
-        self.position = pygame.mouse.get_pos()
+        raw_x, raw_y = pygame.mouse.get_pos()
+        scale_x, scale_y = self.scale
+        self.position = (raw_x * scale_x, raw_y * scale_y)
 
         if self.tile_size:
             self.tile_pos = (self.position[0] // self.tile_size, self.position[1] // self.tile_size)

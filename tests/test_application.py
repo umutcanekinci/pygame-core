@@ -100,10 +100,11 @@ def test_set_size_updates_size_width_height():
 
 def test_full_screen_and_minimize_both_resize_to_minimized_size():
     """minimize() and full_screen() intentionally both call
-    set_size(self.minimized_size) -- the passed size is the logical/authored
-    resolution, and pygame.SCALED has SDL upscale it to fill the real screen
-    in fullscreen mode. They differ in the FULLSCREEN|SCALED flag passed to
-    set_mode and in `._is_fullscreen`, not in `.size`."""
+    set_size(self.minimized_size) -- `.size` is always the logical/authored
+    resolution that self.window (the fixed render target) is drawn at,
+    regardless of what physical size the real OS window ends up being.
+    They differ in `.display_surface`'s actual size/flags and in
+    `._is_fullscreen`, not in `.size`."""
     app = _TrackedApp()
     app.set_size((999, 999))
 
@@ -115,6 +116,77 @@ def test_full_screen_and_minimize_both_resize_to_minimized_size():
     app.full_screen()
     assert app.size == app.minimized_size
     assert app._is_fullscreen is True
+
+
+def test_full_screen_display_surface_matches_real_screen_size():
+    app = _TrackedApp()
+    assert app.display_surface.get_size() == app.full_screen_size
+
+
+def _pin_dimensions(app, *, minimized: tuple[int, int], full_screen: tuple[int, int]) -> None:
+    """Dummy-driver pygame.display.Info() reflects whatever mode the *last*
+    set_mode() call in this pytest session requested, not a fixed native
+    desktop size -- so tests can't rely on its value being consistent
+    across runs/ordering. Pin both sizes directly instead."""
+    app.minimized_size = app.minimized_width, app.minimized_height = minimized
+    app.full_screen_size = app.full_screen_width, app.full_screen_height = full_screen
+
+
+def test_windowed_physical_size_shrinks_to_fit_with_margin_when_design_res_exceeds_screen():
+    """Requesting a design resolution bigger than the screen must shrink --
+    with room to spare for window chrome -- rather than requesting a window
+    larger than the screen (the original bug: an oversized bordered window
+    has its title bar pushed off-screen and looks indistinguishable from
+    fullscreen)."""
+    app = _TrackedApp()
+    _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
+
+    windowed_size = app._windowed_physical_size()
+
+    assert windowed_size[0] < app.full_screen_width
+    assert windowed_size[1] < app.full_screen_height
+    assert windowed_size == (819, 614)  # round(2000 * 0.8*1024/2000), round(1500 * 0.8*768/1500)
+
+
+def test_windowed_physical_size_never_exceeds_design_resolution():
+    """When the design resolution already comfortably fits the screen,
+    windowed mode should use the design resolution as-is rather than
+    upscaling it."""
+    app = _TrackedApp()
+    _pin_dimensions(app, minimized=(320, 240), full_screen=(1024, 768))
+
+    assert app._windowed_physical_size() == (320, 240)
+
+
+def test_minimize_sets_display_surface_to_windowed_physical_size():
+    app = _TrackedApp()
+    _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
+
+    app.minimize()
+
+    assert app.display_surface.get_size() == app._windowed_physical_size()
+    assert app.display_surface.get_size() != (2000, 1500)
+
+
+def test_minimize_and_full_screen_sync_mouse_scale_to_physical_size():
+    app = _TrackedApp()
+    _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
+
+    app.minimize()
+    physical = app.display_surface.get_size()
+    assert app.mouse.scale == (app.window.get_width() / physical[0], app.window.get_height() / physical[1])
+
+    app.full_screen()
+    assert app.mouse.scale == (
+        app.window.get_width() / app.full_screen_width,
+        app.window.get_height() / app.full_screen_height,
+    )
+
+
+def test_sync_mouse_scale_is_a_noop_without_a_mouse():
+    app = _TrackedApp(mouse=None)
+    app.minimize()  # must not raise with no mouse object
+    app.full_screen()
 
 
 # ── _handle_core_event: debug toggle, F11, escape/quit -> exit ──────────
@@ -240,6 +312,33 @@ def test_draw_mouse_calls_mouse_draw_with_window():
 def test_draw_mouse_skips_when_mouse_is_falsy():
     app = _TrackedApp(mouse=None)
     app.draw_mouse()  # must not raise with no mouse object
+
+
+# ── _present ──────────────────────────────────────────────────────────
+
+
+def test_present_blits_directly_when_window_and_display_are_the_same_size():
+    app = _TrackedApp()
+    _pin_dimensions(app, minimized=(320, 240), full_screen=(1024, 768))
+    app.minimize()  # design res comfortably fits -- windowed size == minimized_size
+    assert app.window.get_size() == app.display_surface.get_size()
+    app.window.fill((10, 20, 30))
+
+    app._present()
+
+    assert app.display_surface.get_at((0, 0))[:3] == (10, 20, 30)
+
+
+def test_present_scales_the_logical_window_onto_a_differently_sized_display():
+    app = _TrackedApp()
+    _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
+    app.minimize()  # display_surface is now smaller than app.window
+    assert app.window.get_size() != app.display_surface.get_size()
+    app.window.fill((10, 20, 30))
+
+    app._present()  # must not raise scaling a bigger surface onto a smaller one
+
+    assert app.display_surface.get_at((0, 0))[:3] == (10, 20, 30)
 
 
 # ── run() loop ──────────────────────────────────────────────────────────
