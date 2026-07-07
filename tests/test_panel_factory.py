@@ -209,22 +209,19 @@ def test_click_sound_defaults_to_none(assets, parent):
     assert obj.on_click_sound is None
 
 
-# ── make_factory: known-broken size: WINDOW path ───────────────────────
+# ── make_factory: size: WINDOW ──────────────────────────────────────────
 
 
-def test_size_window_currently_raises_instead_of_sizing_to_the_parent(assets, parent):
-    """Documented actual (broken) behavior, not desired: cfg["size"] == "WINDOW"
-    sets `size = parent` (the Transform itself, not a tuple), and
-    StateObject.__init__ then tries `self.rect.size = parent`, which pygame.Rect
-    rejects with a TypeError since a Transform doesn't unpack as (w, h). No
-    project currently uses `size: WINDOW` on a GUI object, so this path is
-    untested/unhit in practice -- if that's ever needed, this needs a real fix
-    (likely `parent.size` instead of `parent`)."""
+def test_size_window_sizes_the_object_to_the_parents_size(assets, parent):
+    """cfg["size"] == "WINDOW" sizes the object to fill its parent -- fixed
+    from a prior bug where `size = parent` assigned the Transform itself
+    (not a tuple) to rect.size, which pygame.Rect rejected with a TypeError."""
     factory = make_factory(assets)
     cfg = {"position": (0, 0), "size": "WINDOW", "asset": assets.image_path("btn")}
 
-    with pytest.raises(TypeError):
-        factory(cfg, parent)
+    obj = factory(cfg, parent)
+
+    assert obj.rect.size == parent.size
 
 
 # ── make_animated_factory ──────────────────────────────────────────────

@@ -21,7 +21,7 @@ from pygame_core.ecs.state_object import StateObject, HoverableStateObject
 def make_factory(assets):
     def make_gui_object(cfg: dict, parent: Transform) -> StateObject:
         pos          = cfg["position"]
-        size         = tuple(cfg["size"]) if cfg["size"] != "WINDOW" else parent
+        size         = tuple(cfg["size"]) if cfg["size"] != "WINDOW" else parent.size
         asset        = cfg.get("asset")
         hover        = cfg.get("hover")
         extra_states = cfg.get("states", {})
