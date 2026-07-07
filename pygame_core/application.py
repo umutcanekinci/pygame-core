@@ -12,6 +12,7 @@ class Application:
         self._is_running = False
         self._fps = fps
         self._is_in_debug_mode = False
+        self._is_fullscreen = False
         self.size: tuple[int, int] = size
         self.mouse_pos = (0, 0)
         self.mouse = mouse if mouse is not None else Mouse()
@@ -49,10 +50,15 @@ class Application:
     def minimize(self):
         self.set_size(self.minimized_size)
         self.window = pygame.display.set_mode(self.size)
+        self._is_fullscreen = False
 
     def full_screen(self):
+        # Passed size is the logical/authored resolution, not the physical
+        # display's -- pygame.SCALED has SDL upscale this surface to fill the
+        # real screen, so it stays the same as minimize()'s size on purpose.
         self.set_size(self.minimized_size)
         self.window = pygame.display.set_mode(self.size, pygame.FULLSCREEN | pygame.SCALED)
+        self._is_fullscreen = True
 
     def set_size(self, size: tuple) -> None:
         self.size = self.width, self.height = size
@@ -88,10 +94,10 @@ class Application:
             elif event.key == pygame.K_F1:
                 self._is_in_debug_mode = not self._is_in_debug_mode
             elif event.key == pygame.K_F11:
-                if self.size == self.minimized_size:
-                    self.full_screen()
-                else:
+                if self._is_fullscreen:
                     self.minimize()
+                else:
+                    self.full_screen()
         elif event.type == pygame.QUIT:
             self.on_exit_request()
 

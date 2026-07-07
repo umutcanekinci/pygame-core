@@ -59,6 +59,7 @@ def test_init_stores_basic_attributes():
     assert app._fps == 0
     assert app.mouse_pos == (0, 0)
     assert isinstance(app.mouse, Mouse)
+    assert app._is_fullscreen is True  # __init__ ends by calling full_screen()
 
 
 def test_init_uses_injected_mouse_instead_of_default():
@@ -98,19 +99,22 @@ def test_set_size_updates_size_width_height():
 
 
 def test_full_screen_and_minimize_both_resize_to_minimized_size():
-    """Documented actual behaviour: both minimize() and full_screen() call
-    set_size(self.minimized_size) -- they only differ in the FULLSCREEN|SCALED
-    flag passed to pygame.display.set_mode, not in the resulting `.size`.
-    See the F11-toggle test below for the resulting practical implication."""
+    """minimize() and full_screen() intentionally both call
+    set_size(self.minimized_size) -- the passed size is the logical/authored
+    resolution, and pygame.SCALED has SDL upscale it to fill the real screen
+    in fullscreen mode. They differ in the FULLSCREEN|SCALED flag passed to
+    set_mode and in `._is_fullscreen`, not in `.size`."""
     app = _TrackedApp()
     app.set_size((999, 999))
 
     app.minimize()
     assert app.size == app.minimized_size
+    assert app._is_fullscreen is False
 
     app.set_size((999, 999))
     app.full_screen()
     assert app.size == app.minimized_size
+    assert app._is_fullscreen is True
 
 
 # ── _handle_core_event: debug toggle, F11, escape/quit -> exit ──────────
@@ -127,13 +131,28 @@ def test_f1_toggles_debug_mode():
     assert app._is_in_debug_mode is False
 
 
-def test_f11_calls_full_screen_when_already_at_minimized_size():
-    """Since __init__ ends by calling full_screen(), and full_screen() sets
-    size to minimized_size (see quirk above), self.size == self.minimized_size
-    is already true right after construction -- so the *first* F11 press
-    always re-enters the full_screen() branch, never minimize()."""
+def test_f11_calls_minimize_when_currently_fullscreen():
+    """__init__ ends by calling full_screen(), so _is_fullscreen is already
+    True at construction -- the first F11 press must minimize, not
+    re-enter full_screen() (the bug this toggle used to have: checking
+    `self.size == self.minimized_size` couldn't tell fullscreen from
+    windowed, since both methods set the same `.size`)."""
     app = _TrackedApp()
-    assert app.size == app.minimized_size
+    assert app._is_fullscreen is True
+
+    calls = []
+    app.full_screen = lambda: calls.append("full_screen")
+    app.minimize = lambda: calls.append("minimize")
+
+    app._handle_core_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_F11))
+
+    assert calls == ["minimize"]
+
+
+def test_f11_calls_full_screen_when_currently_windowed():
+    app = _TrackedApp()
+    app.minimize()
+    assert app._is_fullscreen is False
 
     calls = []
     app.full_screen = lambda: calls.append("full_screen")
@@ -144,17 +163,15 @@ def test_f11_calls_full_screen_when_already_at_minimized_size():
     assert calls == ["full_screen"]
 
 
-def test_f11_calls_minimize_once_size_differs_from_minimized_size():
+def test_f11_toggles_back_and_forth_across_repeated_presses():
     app = _TrackedApp()
-    app.set_size((999, 999))  # now different from minimized_size
-
-    calls = []
-    app.full_screen = lambda: calls.append("full_screen")
-    app.minimize = lambda: calls.append("minimize")
+    assert app._is_fullscreen is True
 
     app._handle_core_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_F11))
+    assert app._is_fullscreen is False
 
-    assert calls == ["minimize"]
+    app._handle_core_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_F11))
+    assert app._is_fullscreen is True
 
 
 def test_escape_key_requests_exit(no_real_exit):
