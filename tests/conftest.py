@@ -13,7 +13,26 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 # Make the helper module in this directory importable as `import _util`.
 sys.path.insert(0, os.path.dirname(__file__))
 
+import pygame
 import pytest
+
+# GameObject.invoke/_tick_scheduled and Animator both call pygame.time.get_ticks(),
+# which works pre-init (returns 0) but only actually advances once pygame is
+# initialized. Tests that need controlled timing monkeypatch get_ticks anyway,
+# but this keeps ticks meaningful in any test that reads real time.
+pygame.init()
+
+
+@pytest.fixture
+def fake_ticks(monkeypatch):
+    """A controllable stand-in for pygame.time.get_ticks().
+
+    Returns a dict; set fake_ticks["t"] = <ms> to move the clock without
+    real sleeps, for deterministic tests of invoke/invoke_repeating/Animator.
+    """
+    state = {"t": 0}
+    monkeypatch.setattr(pygame.time, "get_ticks", lambda: state["t"])
+    return state
 
 
 @pytest.fixture
