@@ -59,3 +59,9 @@ class SaveStore:
 
     def exists(self) -> bool:
         return self.path.exists()
+
+    def delete(self) -> None:
+        """Remove the store entirely (e.g. clearing a game-over save so
+        "Continue" doesn't offer to resume a run that's already lost).
+        A no-op if there's nothing to delete."""
+        self.path.unlink(missing_ok=True)

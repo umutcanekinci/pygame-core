@@ -152,3 +152,34 @@ def test_exists_is_true_after_save():
     store = SaveStore("settings")
     store.save({"a": 1})
     assert store.exists() is True
+
+
+# ── delete ───────────────────────────────────────────────────────────
+
+
+def test_delete_removes_an_existing_store():
+    store = SaveStore("save")
+    store.save({"level": 3})
+
+    store.delete()
+
+    assert store.exists() is False
+    assert store.load() == {}
+
+
+def test_delete_before_any_save_is_a_no_op():
+    store = SaveStore("save")
+    store.delete()  # must not raise just because there's nothing to delete
+    assert store.exists() is False
+
+
+def test_delete_does_not_affect_a_different_store():
+    settings = SaveStore("settings")
+    save = SaveStore("save")
+    settings.save({"a": 1})
+    save.save({"b": 2})
+
+    save.delete()
+
+    assert settings.exists() is True
+    assert settings.load() == {"a": 1}
