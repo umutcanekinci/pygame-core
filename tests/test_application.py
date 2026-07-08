@@ -297,17 +297,34 @@ def test_f1_toggles_debug_mode():
     assert app._is_in_debug_mode is False
 
 
-def test_f11_calls_minimize_when_currently_fullscreen():
-    """__init__ ends by calling full_screen(), so _is_fullscreen is already
-    True at construction -- the first F11 press must minimize, not
-    re-enter full_screen() (the bug this toggle used to have: checking
-    `self.size == self.minimized_size` couldn't tell fullscreen from
-    windowed, since both methods set the same `.size`)."""
+def test_f11_calls_borderless_full_screen_when_currently_fullscreen():
+    """__init__ ends by calling full_screen(), so _window_mode is already
+    "fullscreen" at construction -- the first F11 press must advance to
+    borderless, not straight back to windowed or re-enter full_screen()
+    (the original bug: checking `self.size == self.minimized_size`
+    couldn't tell fullscreen from windowed, since both methods set the
+    same `.size`)."""
     app = _TrackedApp()
-    assert app._is_fullscreen is True
+    assert app._window_mode == "fullscreen"
 
     calls = []
     app.full_screen = lambda: calls.append("full_screen")
+    app.borderless_full_screen = lambda: calls.append("borderless_full_screen")
+    app.minimize = lambda: calls.append("minimize")
+
+    app._handle_core_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_F11))
+
+    assert calls == ["borderless_full_screen"]
+
+
+def test_f11_calls_minimize_when_currently_borderless():
+    app = _TrackedApp()
+    app.borderless_full_screen()
+    assert app._window_mode == "borderless"
+
+    calls = []
+    app.full_screen = lambda: calls.append("full_screen")
+    app.borderless_full_screen = lambda: calls.append("borderless_full_screen")
     app.minimize = lambda: calls.append("minimize")
 
     app._handle_core_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_F11))
@@ -318,10 +335,11 @@ def test_f11_calls_minimize_when_currently_fullscreen():
 def test_f11_calls_full_screen_when_currently_windowed():
     app = _TrackedApp()
     app.minimize()
-    assert app._is_fullscreen is False
+    assert app._window_mode == "windowed"
 
     calls = []
     app.full_screen = lambda: calls.append("full_screen")
+    app.borderless_full_screen = lambda: calls.append("borderless_full_screen")
     app.minimize = lambda: calls.append("minimize")
 
     app._handle_core_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_F11))
@@ -329,15 +347,41 @@ def test_f11_calls_full_screen_when_currently_windowed():
     assert calls == ["full_screen"]
 
 
-def test_f11_toggles_back_and_forth_across_repeated_presses():
+def test_f11_cycles_through_all_three_modes_and_wraps_around():
     app = _TrackedApp()
-    assert app._is_fullscreen is True
+    assert app._window_mode == "fullscreen"
 
     app._handle_core_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_F11))
-    assert app._is_fullscreen is False
+    assert app._window_mode == "borderless"
 
     app._handle_core_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_F11))
-    assert app._is_fullscreen is True
+    assert app._window_mode == "windowed"
+
+    app._handle_core_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_F11))
+    assert app._window_mode == "fullscreen"
+
+
+def test_borderless_full_screen_sets_display_surface_to_full_screen_size():
+    app = _TrackedApp()
+    _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
+
+    app.borderless_full_screen()
+
+    assert app.display_surface.get_size() == app.full_screen_size
+    assert app._window_mode == "borderless"
+    assert app._is_fullscreen is False  # only exclusive FULLSCREEN counts as fullscreen
+
+
+def test_borderless_full_screen_syncs_mouse_scale():
+    app = _TrackedApp()
+    _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
+
+    app.borderless_full_screen()
+
+    assert app.mouse.scale == (
+        app.window.get_width() / app.full_screen_width,
+        app.window.get_height() / app.full_screen_height,
+    )
 
 
 def test_escape_key_requests_exit(no_real_exit):

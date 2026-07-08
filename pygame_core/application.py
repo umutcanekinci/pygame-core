@@ -17,11 +17,17 @@ COMMON_RESOLUTIONS: tuple[tuple[int, int], ...] = (
 
 
 class Application:
+    # Cycle order for F11 / cycle_window_mode(): exclusive fullscreen (real
+    # display mode switch) -> borderless fullscreen (screen-filling window,
+    # no mode switch -- avoids the flash/flicker of a mode switch and plays
+    # nicer with Windows DPI/GPU scaling) -> bordered windowed.
+    WINDOW_MODES: tuple[str, ...] = ("fullscreen", "borderless", "windowed")
+
     def __init__(self, size: tuple[int, int], title: str, fps: int, mouse=None) -> None:
         self._is_running = False
         self._fps = fps
         self._is_in_debug_mode = False
-        self._is_fullscreen = False
+        self._window_mode = "windowed"  # overwritten below by full_screen()
         self._windowed_resolution_override: tuple[int, int] | None = None
         self.size: tuple[int, int] = size
         self.mouse_pos = (0, 0)
@@ -102,13 +108,44 @@ class Application:
         self.set_size(self.minimized_size)
         self.display_surface = pygame.display.set_mode(self._windowed_physical_size())
         self._sync_mouse_scale()
-        self._is_fullscreen = False
+        self._window_mode = "windowed"
 
     def full_screen(self):
         self.set_size(self.minimized_size)
         self.display_surface = pygame.display.set_mode(self.full_screen_size, pygame.FULLSCREEN)
         self._sync_mouse_scale()
-        self._is_fullscreen = True
+        self._window_mode = "fullscreen"
+
+    def borderless_full_screen(self):
+        # A window sized to exactly the screen with no border/title bar --
+        # fills the screen like FULLSCREEN but without an exclusive display
+        # mode switch, so no flash/flicker on alt-tab and no interaction
+        # with GPU/monitor scaling behavior tied to exclusive mode switches.
+        self.set_size(self.minimized_size)
+        self.display_surface = pygame.display.set_mode(self.full_screen_size, pygame.NOFRAME)
+        self._sync_mouse_scale()
+        self._window_mode = "borderless"
+
+    def cycle_window_mode(self, step: int = 1) -> None:
+        """Advance through WINDOW_MODES by `step` (wraps around) and apply
+        the result. F11 calls this with the default step to cycle
+        fullscreen -> borderless -> windowed -> fullscreen ..."""
+        methods = {
+            "fullscreen": self.full_screen,
+            "borderless": self.borderless_full_screen,
+            "windowed": self.minimize,
+        }
+        index = self.WINDOW_MODES.index(self._window_mode)
+        new_mode = self.WINDOW_MODES[(index + step) % len(self.WINDOW_MODES)]
+        methods[new_mode]()
+
+    @property
+    def _is_fullscreen(self) -> bool:
+        """True only for exclusive FULLSCREEN -- kept as a read-only alias
+        of `_window_mode` for existing callers that only care about the
+        fullscreen/not-fullscreen distinction (e.g. windowed_resolution
+        picking, which treats borderless the same as windowed)."""
+        return self._window_mode == "fullscreen"
 
     def _windowed_physical_size(self) -> tuple[int, int]:
         if self._windowed_resolution_override is not None:
@@ -218,10 +255,7 @@ class Application:
             elif event.key == pygame.K_F1:
                 self._is_in_debug_mode = not self._is_in_debug_mode
             elif event.key == pygame.K_F11:
-                if self._is_fullscreen:
-                    self.minimize()
-                else:
-                    self.full_screen()
+                self.cycle_window_mode()
         elif event.type == pygame.QUIT:
             self.on_exit_request()
 
