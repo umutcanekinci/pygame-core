@@ -107,6 +107,14 @@ class Application:
         # put its title bar/borders -- they get pushed off-screen and it
         # looks identical to FULLSCREEN. _windowed_physical_size() shrinks
         # the real OS window enough to leave room for them.
+        #
+        # center_window() only sets an env var SDL reads on window creation;
+        # __init__ sets it once, but re-set it right before every set_mode()
+        # here too -- position is only meaningful in windowed mode (full_screen
+        # and borderless_full_screen always fill the screen at (0,0)), and
+        # this is the one call site that can run many times in a session
+        # (window mode/resolution pickers, F11), not just at startup.
+        self.center_window()
         self.display_surface = pygame.display.set_mode(self._windowed_physical_size())
         self._rebuild_window_surface()
         self._sync_mouse_scale()
