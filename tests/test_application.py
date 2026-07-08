@@ -233,16 +233,30 @@ def test_available_windowed_resolutions_always_includes_the_current_selection():
     assert (999, 555) in app.available_windowed_resolutions()
 
 
-def test_set_windowed_resolution_switches_to_windowed_even_from_fullscreen():
-    """Resolution is inherently a windowed concept -- picking one should be
-    immediately visible rather than silently pending until a later F11."""
+def test_set_windowed_resolution_does_not_switch_mode_from_fullscreen():
+    """Window mode and resolution are independent settings -- picking a
+    resolution while fullscreen (or borderless) must not force a switch to
+    windowed. The pick is still remembered (see the "overrides" test below)
+    for whenever windowed mode is next entered."""
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))
     assert app._is_fullscreen is True
+    display_size_before = app.display_surface.get_size()
 
     app.set_windowed_resolution((1024, 576))
 
-    assert app._is_fullscreen is False
+    assert app._is_fullscreen is True
+    assert app.display_surface.get_size() == display_size_before  # untouched -- still fullscreen
+
+
+def test_set_windowed_resolution_resizes_immediately_when_already_windowed():
+    app = _TrackedApp()
+    _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))
+    app.minimize()
+
+    app.set_windowed_resolution((1024, 576))
+
+    assert app._window_mode == "windowed"
     assert app.display_surface.get_size() == (1024, 576)
 
 
@@ -270,6 +284,7 @@ def test_clear_windowed_resolution_override_reverts_to_auto_fit():
 def test_clear_windowed_resolution_override_does_not_resize_the_current_window():
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))
+    app.minimize()
     app.set_windowed_resolution((1280, 720))
 
     app.clear_windowed_resolution_override()
@@ -280,6 +295,7 @@ def test_clear_windowed_resolution_override_does_not_resize_the_current_window()
 def test_cycle_windowed_resolution_advances_through_the_sorted_list():
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))
+    app.minimize()
     options = app.available_windowed_resolutions()
 
     first = app.cycle_windowed_resolution(1)
@@ -290,6 +306,23 @@ def test_cycle_windowed_resolution_advances_through_the_sorted_list():
 
     second = app.cycle_windowed_resolution(1)
     assert second == options[1]
+
+
+def test_cycle_windowed_resolution_does_not_switch_mode_from_fullscreen():
+    """Same independence as set_windowed_resolution() -- cycling while
+    fullscreen updates the remembered pick without resizing or switching
+    mode."""
+    app = _TrackedApp()
+    _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))
+    options = app.available_windowed_resolutions()
+    display_size_before = app.display_surface.get_size()
+
+    first = app.cycle_windowed_resolution(1)
+
+    assert first == options[0]
+    assert app.windowed_resolution == options[0]
+    assert app._is_fullscreen is True
+    assert app.display_surface.get_size() == display_size_before
 
 
 def test_cycle_windowed_resolution_wraps_around_in_both_directions():

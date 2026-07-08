@@ -205,13 +205,16 @@ class Application:
 
     def set_windowed_resolution(self, size: tuple[int, int]) -> None:
         """Explicitly choose the physical window size minimize() uses,
-        overriding the automatic best-fit calculation, and switch to
-        windowed mode showing it -- a "resolution" is inherently a windowed
-        concept (fullscreen is always the native monitor resolution), so
-        picking one should give immediate visible feedback rather than
-        silently applying next time the player happens to press F11."""
+        overriding the automatic best-fit calculation. Window mode and
+        resolution are independent settings -- picking a resolution never
+        forces a mode switch. If already windowed, minimize() re-runs so
+        the new size is immediately visible; if fullscreen/borderless
+        (both always the native monitor resolution, unaffected by this),
+        the pick is just remembered for whenever windowed mode is next
+        entered, via F11 or the window-mode setting."""
         self._windowed_resolution_override = size
-        self.minimize()
+        if self._window_mode == "windowed":
+            self.minimize()
 
     def clear_windowed_resolution_override(self) -> None:
         """Drop any explicit pick, reverting windowed_resolution to the
