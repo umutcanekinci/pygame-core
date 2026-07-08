@@ -253,6 +253,26 @@ def test_set_windowed_resolution_overrides_the_automatic_fit_calculation():
     assert app.display_surface.get_size() == (1280, 720)
 
 
+def test_clear_windowed_resolution_override_reverts_to_auto_fit():
+    app = _TrackedApp()
+    _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))
+    app.set_windowed_resolution((1280, 720))
+
+    app.clear_windowed_resolution_override()
+
+    assert app.windowed_resolution == app._auto_windowed_physical_size()
+
+
+def test_clear_windowed_resolution_override_does_not_resize_the_current_window():
+    app = _TrackedApp()
+    _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))
+    app.set_windowed_resolution((1280, 720))
+
+    app.clear_windowed_resolution_override()
+
+    assert app.display_surface.get_size() == (1280, 720)  # unchanged until the next minimize()/F11
+
+
 def test_cycle_windowed_resolution_advances_through_the_sorted_list():
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))

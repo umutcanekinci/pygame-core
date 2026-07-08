@@ -197,6 +197,13 @@ class Application:
         self._windowed_resolution_override = size
         self.minimize()
 
+    def clear_windowed_resolution_override(self) -> None:
+        """Drop any explicit pick, reverting windowed_resolution to the
+        automatic best-fit calculation. Doesn't switch mode or resize the
+        window itself -- pair with minimize() (or leave it for the next
+        minimize()/F11 press) if the change should be visible immediately."""
+        self._windowed_resolution_override = None
+
     def cycle_windowed_resolution(self, step: int = 1) -> tuple[int, int]:
         """Advance through available_windowed_resolutions() by `step`
         (wraps around) and apply the result. Returns the newly selected size
