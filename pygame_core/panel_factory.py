@@ -13,6 +13,7 @@ import pygame
 from pygame_core.font import load_font
 from pygame_core.sprite_sheet import SpriteSheet
 from pygame_core.ui_widgets.text_object import TextObject
+from pygame_core.ui_widgets.slider import Slider
 from pygame_core.ecs.animated_sprite import AnimatedSprite
 from pygame_core.ecs.components.transform import Transform
 from pygame_core.ecs.state_object import StateObject, HoverableStateObject
@@ -65,6 +66,18 @@ def make_animated_factory(assets):
         return AnimatedSprite(parent=parent, pos=pos, size=size, frames=frames,
                               fps=fps, loop=loop)
     return make_animated_object
+
+
+def make_slider_factory(assets):
+    def make_slider(cfg: dict, parent: Transform) -> Slider:
+        return Slider(
+            parent=parent,
+            pos=cfg["position"],
+            size=tuple(cfg.get("size", (300, 24))),
+            value=cfg.get("value", 1.0),
+            anchor=cfg.get("anchor", "top-left"),
+        )
+    return make_slider
 
 
 def make_text_factory(assets):
