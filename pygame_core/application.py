@@ -29,22 +29,19 @@ class Application:
         self._is_in_debug_mode = False
         self._window_mode = "windowed"  # overwritten below by full_screen()
         self._windowed_resolution_override: tuple[int, int] | None = None
+        # No longer a "design/authoring resolution" -- just the preferred
+        # default *windowed* size before the player ever picks one explicitly
+        # (see _windowed_physical_size()). The logical canvas (self.window)
+        # is dynamic; it's rebuilt to match whatever size is actually chosen.
         self.size: tuple[int, int] = size
+        self.window: pygame.Surface | None = None
         self.mouse_pos = (0, 0)
         self.mouse = mouse if mouse is not None else Mouse()
 
         self.init_pygame()
         self.set_title(title)
         self.fetch_screen_dimensions(size)
-        # Fixed logical render target: every draw call in the game targets
-        # this, at the authored design resolution, regardless of what size
-        # the real OS window actually is. _present() scales it onto the real
-        # window each frame -- this is what lets windowed mode be a genuinely
-        # smaller/bordered window instead of forcing the OS window to match
-        # the design resolution 1:1.
-        self.window = pygame.Surface(self.minimized_size)
-        self.full_screen()
-        self.window = self.window.convert()  # match the now-established display format
+        self.full_screen()  # sets display_surface and rebuilds self.window to match it 1:1
         self.center_window()
         self.clock = pygame.time.Clock()
 
@@ -88,7 +85,6 @@ class Application:
         self.info_object = pygame.display.Info()
         self.full_screen_size = self.full_screen_width, self.full_screen_height = self.info_object.current_w, self.info_object.current_h
         self.minimized_size = self.minimized_width, self.minimized_height = size
-        self.scale = self.full_screen_width / self.minimized_width, self.full_screen_height / self.minimized_height
 
     @staticmethod
     def get_title() -> str:
@@ -102,17 +98,15 @@ class Application:
         # A bordered window sized to exactly fill the screen has nowhere to
         # put its title bar/borders -- they get pushed off-screen and it
         # looks identical to FULLSCREEN. _windowed_physical_size() shrinks
-        # the real OS window enough to leave room for them; self.window (the
-        # logical render target every draw call uses) stays at the full
-        # design resolution regardless, and _present() scales it down to fit.
-        self.set_size(self.minimized_size)
+        # the real OS window enough to leave room for them.
         self.display_surface = pygame.display.set_mode(self._windowed_physical_size())
+        self._rebuild_window_surface()
         self._sync_mouse_scale()
         self._window_mode = "windowed"
 
     def full_screen(self):
-        self.set_size(self.minimized_size)
         self.display_surface = pygame.display.set_mode(self.full_screen_size, pygame.FULLSCREEN)
+        self._rebuild_window_surface()
         self._sync_mouse_scale()
         self._window_mode = "fullscreen"
 
@@ -121,10 +115,32 @@ class Application:
         # fills the screen like FULLSCREEN but without an exclusive display
         # mode switch, so no flash/flicker on alt-tab and no interaction
         # with GPU/monitor scaling behavior tied to exclusive mode switches.
-        self.set_size(self.minimized_size)
         self.display_surface = pygame.display.set_mode(self.full_screen_size, pygame.NOFRAME)
+        self._rebuild_window_surface()
         self._sync_mouse_scale()
         self._window_mode = "borderless"
+
+    def _rebuild_window_surface(self) -> None:
+        """Keep the logical render target (self.window) exactly matching the
+        real OS window's current size -- this is what makes _present() a
+        plain 1:1 blit with no scaling, stretching, or letterboxing. A no-op
+        if the size didn't actually change (e.g. toggling between fullscreen
+        and borderless, which share full_screen_size) -- avoids a spurious
+        on_canvas_resized() and a one-frame black flash from a fresh Surface.
+        """
+        new_size = self.display_surface.get_size()
+        if self.window is not None and self.window.get_size() == new_size:
+            return
+        self.window = pygame.Surface(new_size).convert()
+        self.set_size(new_size)
+        self.on_canvas_resized(new_size)
+
+    def on_canvas_resized(self, new_size: tuple[int, int]) -> None:
+        """Override in a subclass to react to the logical canvas changing
+        size (window mode toggled via F11, a new windowed resolution
+        picked, ...) -- e.g. resize a camera viewport or re-anchor UI
+        chrome to the new edges. No-op by default."""
+        pass
 
     def cycle_window_mode(self, step: int = 1) -> None:
         """Advance through WINDOW_MODES by `step` (wraps around) and apply
@@ -151,7 +167,7 @@ class Application:
         if self._windowed_resolution_override is not None:
             return self._windowed_resolution_override
         # Leave headroom for window chrome (title bar/borders) and never
-        # upscale past the design resolution -- cap the shrink factor at 1.0.
+        # upscale past the preferred windowed size -- cap the shrink factor at 1.0.
         margin = 0.8
         fit = min(
             1.0,
@@ -239,10 +255,11 @@ class Application:
             self._present()
 
     def _present(self) -> None:
-        if self.window.get_size() == self.display_surface.get_size():
-            self.display_surface.blit(self.window, (0, 0))
-        else:
-            pygame.transform.scale(self.window, self.display_surface.get_size(), self.display_surface)
+        # self.window always matches display_surface's size exactly (kept in
+        # sync by _rebuild_window_surface() on every mode/resolution change),
+        # so this is a plain 1:1 blit -- no scaling, no stretching, no
+        # letterboxing, ever.
+        self.display_surface.blit(self.window, (0, 0))
         pygame.display.update()
 
     def _listen_inputs(self) -> None:

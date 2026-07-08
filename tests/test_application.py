@@ -55,11 +55,20 @@ def no_real_exit(monkeypatch):
 
 def test_init_stores_basic_attributes():
     app = _TrackedApp()
-    assert app.size == app.minimized_size
     assert app._fps == 0
     assert app.mouse_pos == (0, 0)
     assert isinstance(app.mouse, Mouse)
     assert app._is_fullscreen is True  # __init__ ends by calling full_screen()
+
+
+def test_init_sizes_the_canvas_to_match_the_real_display_1to1():
+    """No fixed design resolution any more -- self.window is rebuilt to
+    exactly match display_surface (full_screen_size, since __init__ ends in
+    full_screen()), not the constructor's `size` hint."""
+    app = _TrackedApp()
+    assert app.size == app.full_screen_size
+    assert app.window.get_size() == app.full_screen_size
+    assert app.window.get_size() == app.display_surface.get_size()
 
 
 def test_init_uses_injected_mouse_instead_of_default():
@@ -73,13 +82,10 @@ def test_init_sets_window_title():
     assert Application.get_title() == "Test App"
 
 
-def test_fetch_screen_dimensions_computes_scale_from_full_and_minimized_size():
+def test_fetch_screen_dimensions_stores_full_and_minimized_size():
     app = _TrackedApp()
-    expected_scale = (
-        app.full_screen_width / app.minimized_width,
-        app.full_screen_height / app.minimized_height,
-    )
-    assert app.scale == expected_scale
+    assert app.minimized_size == (320, 240)  # the constructor's `size` hint
+    assert app.full_screen_size == (app.full_screen_width, app.full_screen_height)
 
 
 def test_center_window_sets_sdl_env_var():
@@ -98,23 +104,22 @@ def test_set_size_updates_size_width_height():
     assert app.height == 200
 
 
-def test_full_screen_and_minimize_both_resize_to_minimized_size():
-    """minimize() and full_screen() intentionally both call
-    set_size(self.minimized_size) -- `.size` is always the logical/authored
-    resolution that self.window (the fixed render target) is drawn at,
-    regardless of what physical size the real OS window ends up being.
-    They differ in `.display_surface`'s actual size/flags and in
-    `._is_fullscreen`, not in `.size`."""
+def test_full_screen_and_minimize_size_the_canvas_to_their_own_actual_size():
+    """minimize() and full_screen() each rebuild self.window to match
+    whatever physical size *that* mode actually uses -- `.size` tracks the
+    real current canvas, not a fixed authored resolution. They differ in
+    `.display_surface`'s size/flags and in `._is_fullscreen`, and now also
+    in `.size`/`.window` itself."""
     app = _TrackedApp()
-    app.set_size((999, 999))
 
     app.minimize()
-    assert app.size == app.minimized_size
+    assert app.size == app._windowed_physical_size()
+    assert app.window.get_size() == app.display_surface.get_size()
     assert app._is_fullscreen is False
 
-    app.set_size((999, 999))
     app.full_screen()
-    assert app.size == app.minimized_size
+    assert app.size == app.full_screen_size
+    assert app.window.get_size() == app.display_surface.get_size()
     assert app._is_fullscreen is True
 
 
@@ -132,12 +137,12 @@ def _pin_dimensions(app, *, minimized: tuple[int, int], full_screen: tuple[int, 
     app.full_screen_size = app.full_screen_width, app.full_screen_height = full_screen
 
 
-def test_windowed_physical_size_shrinks_to_fit_with_margin_when_design_res_exceeds_screen():
-    """Requesting a design resolution bigger than the screen must shrink --
-    with room to spare for window chrome -- rather than requesting a window
-    larger than the screen (the original bug: an oversized bordered window
-    has its title bar pushed off-screen and looks indistinguishable from
-    fullscreen)."""
+def test_windowed_physical_size_shrinks_to_fit_with_margin_when_preferred_size_exceeds_screen():
+    """Requesting a preferred windowed size bigger than the screen must
+    shrink -- with room to spare for window chrome -- rather than requesting
+    a window larger than the screen (the original bug: an oversized bordered
+    window has its title bar pushed off-screen and looks indistinguishable
+    from fullscreen)."""
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
 
@@ -148,10 +153,9 @@ def test_windowed_physical_size_shrinks_to_fit_with_margin_when_design_res_excee
     assert windowed_size == (819, 614)  # round(2000 * 0.8*1024/2000), round(1500 * 0.8*768/1500)
 
 
-def test_windowed_physical_size_never_exceeds_design_resolution():
-    """When the design resolution already comfortably fits the screen,
-    windowed mode should use the design resolution as-is rather than
-    upscaling it."""
+def test_windowed_physical_size_never_exceeds_the_preferred_size():
+    """When the preferred windowed size already comfortably fits the screen,
+    windowed mode should use it as-is rather than upscaling it."""
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(320, 240), full_screen=(1024, 768))
 
@@ -168,19 +172,19 @@ def test_minimize_sets_display_surface_to_windowed_physical_size():
     assert app.display_surface.get_size() != (2000, 1500)
 
 
-def test_minimize_and_full_screen_sync_mouse_scale_to_physical_size():
+def test_minimize_and_full_screen_keep_mouse_scale_at_identity():
+    """self.window is always rebuilt to exactly match display_surface, so
+    the physical->logical mouse scale factor is always 1:1 now -- there's
+    no separate "design resolution" for real mouse coordinates to be
+    rescaled against."""
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
 
     app.minimize()
-    physical = app.display_surface.get_size()
-    assert app.mouse.scale == (app.window.get_width() / physical[0], app.window.get_height() / physical[1])
+    assert app.mouse.scale == (1.0, 1.0)
 
     app.full_screen()
-    assert app.mouse.scale == (
-        app.window.get_width() / app.full_screen_width,
-        app.window.get_height() / app.full_screen_height,
-    )
+    assert app.mouse.scale == (1.0, 1.0)
 
 
 def test_sync_mouse_scale_is_a_noop_without_a_mouse():
@@ -392,16 +396,13 @@ def test_borderless_full_screen_sets_display_surface_to_full_screen_size():
     assert app._is_fullscreen is False  # only exclusive FULLSCREEN counts as fullscreen
 
 
-def test_borderless_full_screen_syncs_mouse_scale():
+def test_borderless_full_screen_keeps_mouse_scale_at_identity():
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
 
     app.borderless_full_screen()
 
-    assert app.mouse.scale == (
-        app.window.get_width() / app.full_screen_width,
-        app.window.get_height() / app.full_screen_height,
-    )
+    assert app.mouse.scale == (1.0, 1.0)
 
 
 def test_escape_key_requests_exit(no_real_exit):
@@ -475,10 +476,14 @@ def test_draw_mouse_skips_when_mouse_is_falsy():
 # ── _present ──────────────────────────────────────────────────────────
 
 
-def test_present_blits_directly_when_window_and_display_are_the_same_size():
+def test_present_blits_directly_regardless_of_the_windowed_size_chosen():
+    """self.window is always rebuilt to match display_surface exactly, so
+    _present() never needs to scale -- even a windowed size much smaller
+    than the preferred size (previously the "different sizes" case) still
+    blits 1:1."""
     app = _TrackedApp()
-    _pin_dimensions(app, minimized=(320, 240), full_screen=(1024, 768))
-    app.minimize()  # design res comfortably fits -- windowed size == minimized_size
+    _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
+    app.minimize()
     assert app.window.get_size() == app.display_surface.get_size()
     app.window.fill((10, 20, 30))
 
@@ -487,16 +492,45 @@ def test_present_blits_directly_when_window_and_display_are_the_same_size():
     assert app.display_surface.get_at((0, 0))[:3] == (10, 20, 30)
 
 
-def test_present_scales_the_logical_window_onto_a_differently_sized_display():
+# ── _rebuild_window_surface / on_canvas_resized ─────────────────────────
+
+
+def test_window_matches_display_surface_after_every_mode_switch():
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
-    app.minimize()  # display_surface is now smaller than app.window
-    assert app.window.get_size() != app.display_surface.get_size()
-    app.window.fill((10, 20, 30))
 
-    app._present()  # must not raise scaling a bigger surface onto a smaller one
+    for switch in (app.minimize, app.full_screen, app.borderless_full_screen, app.minimize):
+        switch()
+        assert app.window.get_size() == app.display_surface.get_size()
 
-    assert app.display_surface.get_at((0, 0))[:3] == (10, 20, 30)
+
+def test_on_canvas_resized_fires_with_the_new_size_when_it_actually_changes():
+    app = _TrackedApp()
+    _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
+    calls = []
+    app.on_canvas_resized = lambda size: calls.append(size)
+
+    app.minimize()  # 1024x768 -> windowed size, a real change
+
+    assert calls == [app._windowed_physical_size()]
+
+
+def test_on_canvas_resized_does_not_fire_when_the_size_is_unchanged():
+    """full_screen() and borderless_full_screen() both target
+    full_screen_size -- toggling between them shouldn't fire a resize hook
+    or recreate the surface (avoids a spurious camera/UI re-layout and a
+    one-frame black flash)."""
+    app = _TrackedApp()
+    _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
+    app.full_screen()
+    window_before = app.window
+    calls = []
+    app.on_canvas_resized = lambda size: calls.append(size)
+
+    app.borderless_full_screen()
+
+    assert calls == []
+    assert app.window is window_before
 
 
 # ── run() loop ──────────────────────────────────────────────────────────
