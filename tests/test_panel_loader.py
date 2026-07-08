@@ -273,3 +273,35 @@ def test_scale_def_preserves_non_numeric_position_component_window_parented():
 
     assert obj_def["position"][0] == "CENTER"
     assert obj_def["position"][1] == 250
+
+
+def test_scale_def_scales_a_non_top_left_anchor_directly_instead_of_centre_remapping():
+    """A window-parented object anchored to a corner/edge (e.g. bottom-right)
+    holds an inset offset, not an absolute authored-canvas coordinate --
+    centre-remapping it (like the default top-left anchor) would push it off
+    the edge it's meant to hug. This is the exact bug that let
+    kenney_logo (anchor: bottom-right, position: [-25,-25]) render partly
+    off-screen at a smaller-than-authored window size."""
+    window_transform = Transform(position=(0, 0), size=(1000, 500))
+    ld = PanelLoader(PanelManager(), window_transform, AssetManager())
+    ld.scale = 0.5
+    ld.authored_size = (2000, 1000)
+
+    obj_def = {"position": [-25, -25], "anchor": "bottom-right"}
+    ld._scale_def(obj_def, window_parented=True)
+
+    assert obj_def["position"] == [-12, -12]  # round(-25 * 0.5) == -12 (banker's rounding) -- plain magnitude scale
+
+
+def test_scale_def_still_centre_remaps_the_default_top_left_anchor():
+    """Sanity check that the fix above doesn't regress the common case: no
+    explicit `anchor` key (defaults to top-left) still uses the centre-remap."""
+    window_transform = Transform(position=(0, 0), size=(1000, 500))
+    ld = PanelLoader(PanelManager(), window_transform, AssetManager())
+    ld.scale = 1.0
+    ld.authored_size = (2000, 1000)
+
+    obj_def = {"position": [1200, 700]}  # no "anchor" key at all
+    ld._scale_def(obj_def, window_parented=True)
+
+    assert obj_def["position"] == [700, 450]

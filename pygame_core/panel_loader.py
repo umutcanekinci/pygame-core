@@ -85,12 +85,17 @@ class PanelLoader:
 
         size / font_size / text_size always scale by `scale`. Positions parented
         to another object scale about that parent's origin, so child offsets grow
-        with the (also-scaled) parent box. Window-parented positions are remapped
-        from the authored centre to the actual-window centre and their spread
-        scaled by `scale`, so fixed chrome (title, counters) tracks the panel and
-        stays on-screen even when the window is a different size/resolution than
-        the layout was authored for. Non-numeric values ("CENTER", "WINDOW", ...)
-        pass through untouched.
+        with the (also-scaled) parent box. Window-parented positions with the
+        default top-left anchor are remapped from the authored centre to the
+        actual-window centre and their spread scaled by `scale`, so fixed chrome
+        (title, counters) tracks the panel and stays on-screen even when the
+        window is a different size/resolution than the layout was authored for.
+        Window-parented positions with any *other* anchor (top-right,
+        bottom-center, ...) are edge-relative insets, not absolute authored-
+        canvas coordinates -- centre-remapping those would move them off the
+        edge they're anchored to, so they're scaled directly instead, same as
+        an already-parented child's offset. Non-numeric values ("CENTER",
+        "WINDOW", ...) pass through untouched.
         """
         k = self.scale
         authored = self.authored_size or (
@@ -116,7 +121,7 @@ class PanelLoader:
 
         pos = obj_def.get("position")
         if isinstance(pos, list) and len(pos) == 2:
-            if window_parented:
+            if window_parented and obj_def.get("anchor", "top-left") == "top-left":
                 # Map authored-window coords → actual-window coords about centre.
                 acx, acy = self.window_transform.width / 2, self.window_transform.height / 2
                 ocx, ocy = authored[0] / 2, authored[1] / 2
