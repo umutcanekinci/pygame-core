@@ -23,7 +23,8 @@ class Application:
     # nicer with Windows DPI/GPU scaling) -> bordered windowed.
     WINDOW_MODES: tuple[str, ...] = ("fullscreen", "borderless", "windowed")
 
-    def __init__(self, size: tuple[int, int], title: str, fps: int, mouse=None) -> None:
+    def __init__(self, size: tuple[int, int], title: str, fps: int, mouse=None,
+                 render_scale: float = 1.0) -> None:
         self._is_running = False
         self._fps = fps
         self._is_in_debug_mode = False
@@ -35,13 +36,20 @@ class Application:
         # is dynamic; it's rebuilt to match whatever size is actually chosen.
         self.size: tuple[int, int] = size
         self.window: pygame.Surface | None = None
+        # 1.0 (default): self.window always matches the real display exactly,
+        # so _present() is a plain 1:1 blit -- no scaling, ever. Lower this
+        # (see set_render_scale()) to render at a fraction of the real
+        # display's pixels and let _present() upscale -- a cheap way to trade
+        # sharpness for fewer per-frame software blits on weak/mobile
+        # hardware, independent of window mode/resolution.
+        self.render_scale = render_scale
         self.mouse_pos = (0, 0)
         self.mouse = mouse if mouse is not None else Mouse()
 
         self.init_pygame()
         self.set_title(title)
         self.fetch_screen_dimensions(size)
-        self.full_screen()  # sets display_surface and rebuilds self.window to match it 1:1
+        self.full_screen()  # sets display_surface and rebuilds self.window to match it (scaled by render_scale)
         self.center_window()
         self.clock = pygame.time.Clock()
 
@@ -121,25 +129,46 @@ class Application:
         self._window_mode = "borderless"
 
     def _rebuild_window_surface(self) -> None:
-        """Keep the logical render target (self.window) exactly matching the
-        real OS window's current size -- this is what makes _present() a
-        plain 1:1 blit with no scaling, stretching, or letterboxing. A no-op
-        if the size didn't actually change (e.g. toggling between fullscreen
-        and borderless, which share full_screen_size) -- avoids a spurious
-        on_canvas_resized() and a one-frame black flash from a fresh Surface.
+        """Keep the logical render target (self.window) matching the real OS
+        window's current size, scaled by render_scale -- at the default 1.0
+        this makes _present() a plain 1:1 blit with no scaling, stretching,
+        or letterboxing; below 1.0, _present() upscales a smaller render
+        target instead (fewer pixels per frame, for weak/mobile hardware).
+        A no-op if the size didn't actually change (e.g. toggling between
+        fullscreen and borderless, which share full_screen_size) -- avoids a
+        spurious on_canvas_resized() and a one-frame black flash from a
+        fresh Surface.
         """
-        new_size = self.display_surface.get_size()
+        new_size = self._scaled_render_size()
         if self.window is not None and self.window.get_size() == new_size:
             return
         self.window = pygame.Surface(new_size).convert()
         self.set_size(new_size)
         self.on_canvas_resized(new_size)
 
+    def _scaled_render_size(self) -> tuple[int, int]:
+        display_size = self.display_surface.get_size()
+        if self.render_scale == 1.0:
+            return display_size
+        return (round(display_size[0] * self.render_scale), round(display_size[1] * self.render_scale))
+
+    def set_render_scale(self, scale: float) -> None:
+        """Change the internal render resolution relative to the real
+        display (e.g. 0.667 renders at ~720p-equivalent on a 1080p display,
+        upscaled in _present()). 1.0 renders at the display's exact size
+        with no scaling. Independent of window mode/resolution -- applies
+        under fullscreen, borderless, or windowed alike."""
+        if scale == self.render_scale:
+            return
+        self.render_scale = scale
+        self._rebuild_window_surface()
+        self._sync_mouse_scale()
+
     def on_canvas_resized(self, new_size: tuple[int, int]) -> None:
         """Override in a subclass to react to the logical canvas changing
         size (window mode toggled via F11, a new windowed resolution
-        picked, ...) -- e.g. resize a camera viewport or re-anchor UI
-        chrome to the new edges. No-op by default."""
+        picked, render_scale changed, ...) -- e.g. resize a camera viewport
+        or re-anchor UI chrome to the new edges. No-op by default."""
         pass
 
     def cycle_window_mode(self, step: int = 1) -> None:
@@ -258,11 +287,15 @@ class Application:
             self._present()
 
     def _present(self) -> None:
-        # self.window always matches display_surface's size exactly (kept in
-        # sync by _rebuild_window_surface() on every mode/resolution change),
-        # so this is a plain 1:1 blit -- no scaling, no stretching, no
-        # letterboxing, ever.
-        self.display_surface.blit(self.window, (0, 0))
+        # At the default render_scale (1.0), self.window always matches
+        # display_surface's size exactly (kept in sync by
+        # _rebuild_window_surface() on every mode/resolution/render_scale
+        # change), so this is a plain 1:1 blit -- no stretching, no
+        # letterboxing. Only a render_scale < 1.0 engages the upscale.
+        if self.window.get_size() == self.display_surface.get_size():
+            self.display_surface.blit(self.window, (0, 0))
+        else:
+            pygame.transform.scale(self.window, self.display_surface.get_size(), self.display_surface)
         pygame.display.update()
 
     def _listen_inputs(self) -> None:

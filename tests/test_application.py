@@ -525,6 +525,86 @@ def test_present_blits_directly_regardless_of_the_windowed_size_chosen():
     assert app.display_surface.get_at((0, 0))[:3] == (10, 20, 30)
 
 
+# ── render_scale ─────────────────────────────────────────────────────────
+
+
+def test_render_scale_defaults_to_1_and_window_matches_display():
+    app = _TrackedApp()
+    assert app.render_scale == 1.0
+    assert app.window.get_size() == app.display_surface.get_size()
+
+
+def test_render_scale_below_1_shrinks_the_logical_window_relative_to_display():
+    app = _TrackedApp(render_scale=0.5)
+    _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
+    app.full_screen()
+
+    assert app.window.get_size() == (512, 384)  # round(1024*0.5), round(768*0.5)
+    assert app.display_surface.get_size() == (1024, 768)  # display itself is untouched
+
+
+def test_render_scale_applies_across_every_window_mode():
+    app = _TrackedApp(render_scale=0.5)
+    _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
+
+    app.minimize()
+    physical = app.display_surface.get_size()
+    assert app.window.get_size() == (round(physical[0] * 0.5), round(physical[1] * 0.5))
+
+    app.borderless_full_screen()
+    assert app.window.get_size() == (512, 384)
+
+
+def test_present_upscales_when_render_scale_is_below_1():
+    app = _TrackedApp(render_scale=0.5)
+    _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
+    app.full_screen()
+    assert app.window.get_size() != app.display_surface.get_size()
+    app.window.fill((10, 20, 30))
+
+    app._present()  # must not raise scaling a smaller surface onto a larger one
+
+    assert app.display_surface.get_at((0, 0))[:3] == (10, 20, 30)
+
+
+def test_set_render_scale_rebuilds_the_window_and_fires_on_canvas_resized():
+    app = _TrackedApp()
+    _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
+    app.full_screen()
+    calls = []
+    app.on_canvas_resized = lambda size: calls.append(size)
+
+    app.set_render_scale(0.5)
+
+    assert app.window.get_size() == (512, 384)
+    assert calls == [(512, 384)]
+
+
+def test_set_render_scale_to_the_same_value_is_a_noop():
+    app = _TrackedApp(render_scale=0.5)
+    _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
+    app.full_screen()
+    window_before = app.window
+    calls = []
+    app.on_canvas_resized = lambda size: calls.append(size)
+
+    app.set_render_scale(0.5)
+
+    assert calls == []
+    assert app.window is window_before
+
+
+def test_set_render_scale_updates_mouse_scale():
+    app = _TrackedApp()
+    _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
+    app.full_screen()
+    assert app.mouse.scale == (1.0, 1.0)
+
+    app.set_render_scale(0.5)
+
+    assert app.mouse.scale == (0.5, 0.5)
+
+
 # ── _rebuild_window_surface / on_canvas_resized ─────────────────────────
 
 
