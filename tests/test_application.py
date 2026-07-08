@@ -193,47 +193,47 @@ def test_sync_mouse_scale_is_a_noop_without_a_mouse():
     app.full_screen()
 
 
-# ── resolution picker (available_windowed_resolutions / set_windowed_resolution / cycle) ──
+# ── resolution picker (available_resolutions / set_resolution / cycle) ──
 
 
-def test_windowed_resolution_reflects_auto_fit_before_any_explicit_pick():
+def test_resolution_reflects_auto_fit_before_any_explicit_pick():
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(2000, 1500), full_screen=(1024, 768))
 
-    assert app.windowed_resolution == app._windowed_physical_size() == (819, 614)
+    assert app.resolution == app._windowed_physical_size() == (819, 614)
 
 
-def test_windowed_resolution_reflects_an_explicit_pick_even_while_fullscreen():
+def test_resolution_reflects_an_explicit_pick_even_while_fullscreen():
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))
 
-    app.set_windowed_resolution((1280, 720))
+    app.set_resolution((1280, 720))
     app.full_screen()
 
-    assert app.windowed_resolution == (1280, 720)
+    assert app.resolution == (1280, 720)
 
 
-def test_available_windowed_resolutions_filters_to_what_fits_with_margin():
+def test_available_resolutions_filters_to_what_fits_with_margin():
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))
 
-    assert app.available_windowed_resolutions() == [
+    assert app.available_resolutions() == [
         (1024, 576), (1152, 648), (1280, 720), (1280, 800), (1366, 768), (1536, 864),
     ]
 
 
-def test_available_windowed_resolutions_always_includes_the_current_selection():
+def test_available_resolutions_always_includes_the_current_selection():
     """A resolution outside COMMON_RESOLUTIONS (e.g. picked previously, or
     an odd design resolution) must never silently disappear from the list
     the player is choosing from."""
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))
-    app.set_windowed_resolution((999, 555))
+    app.set_resolution((999, 555))
 
-    assert (999, 555) in app.available_windowed_resolutions()
+    assert (999, 555) in app.available_resolutions()
 
 
-def test_set_windowed_resolution_does_not_switch_mode_from_fullscreen():
+def test_set_resolution_does_not_switch_mode_from_fullscreen():
     """Window mode and resolution are independent settings -- picking a
     resolution while fullscreen (or borderless) must not force a switch to
     windowed. The pick is still remembered (see the "overrides" test below)
@@ -243,100 +243,100 @@ def test_set_windowed_resolution_does_not_switch_mode_from_fullscreen():
     assert app._is_fullscreen is True
     display_size_before = app.display_surface.get_size()
 
-    app.set_windowed_resolution((1024, 576))
+    app.set_resolution((1024, 576))
 
     assert app._is_fullscreen is True
     assert app.display_surface.get_size() == display_size_before  # untouched -- still fullscreen
 
 
-def test_set_windowed_resolution_resizes_immediately_when_already_windowed():
+def test_set_resolution_resizes_immediately_when_already_windowed():
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))
     app.minimize()
 
-    app.set_windowed_resolution((1024, 576))
+    app.set_resolution((1024, 576))
 
     assert app._window_mode == "windowed"
     assert app.display_surface.get_size() == (1024, 576)
 
 
-def test_set_windowed_resolution_overrides_the_automatic_fit_calculation():
+def test_set_resolution_overrides_the_automatic_fit_calculation():
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))
 
-    app.set_windowed_resolution((1280, 720))
+    app.set_resolution((1280, 720))
     app.full_screen()
     app.minimize()  # a later plain minimize() must keep using the explicit choice
 
     assert app.display_surface.get_size() == (1280, 720)
 
 
-def test_clear_windowed_resolution_override_reverts_to_auto_fit():
+def test_clear_resolution_override_reverts_to_auto_fit():
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))
-    app.set_windowed_resolution((1280, 720))
+    app.set_resolution((1280, 720))
 
-    app.clear_windowed_resolution_override()
+    app.clear_resolution_override()
 
-    assert app.windowed_resolution == app._auto_windowed_physical_size()
+    assert app.resolution == app._auto_windowed_physical_size()
 
 
-def test_clear_windowed_resolution_override_does_not_resize_the_current_window():
+def test_clear_resolution_override_does_not_resize_the_current_window():
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))
     app.minimize()
-    app.set_windowed_resolution((1280, 720))
+    app.set_resolution((1280, 720))
 
-    app.clear_windowed_resolution_override()
+    app.clear_resolution_override()
 
     assert app.display_surface.get_size() == (1280, 720)  # unchanged until the next minimize()/F11
 
 
-def test_cycle_windowed_resolution_advances_through_the_sorted_list():
+def test_cycle_resolution_advances_through_the_sorted_list():
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))
     app.minimize()
-    options = app.available_windowed_resolutions()
+    options = app.available_resolutions()
 
-    first = app.cycle_windowed_resolution(1)
+    first = app.cycle_resolution(1)
 
     assert first == options[0]
     assert app.display_surface.get_size() == first
     assert app._is_fullscreen is False
 
-    second = app.cycle_windowed_resolution(1)
+    second = app.cycle_resolution(1)
     assert second == options[1]
 
 
-def test_cycle_windowed_resolution_does_not_switch_mode_from_fullscreen():
-    """Same independence as set_windowed_resolution() -- cycling while
+def test_cycle_resolution_does_not_switch_mode_from_fullscreen():
+    """Same independence as set_resolution() -- cycling while
     fullscreen updates the remembered pick without resizing or switching
     mode."""
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))
-    options = app.available_windowed_resolutions()
+    options = app.available_resolutions()
     display_size_before = app.display_surface.get_size()
 
-    first = app.cycle_windowed_resolution(1)
+    first = app.cycle_resolution(1)
 
     assert first == options[0]
-    assert app.windowed_resolution == options[0]
+    assert app.resolution == options[0]
     assert app._is_fullscreen is True
     assert app.display_surface.get_size() == display_size_before
 
 
-def test_cycle_windowed_resolution_wraps_around_in_both_directions():
+def test_cycle_resolution_wraps_around_in_both_directions():
     app = _TrackedApp()
     _pin_dimensions(app, minimized=(1920, 1080), full_screen=(1920, 1080))
-    options = app.available_windowed_resolutions()
+    options = app.available_resolutions()
     starting = app._auto_windowed_physical_size()
 
     last = starting
     for _ in range(len(options)):
-        last = app.cycle_windowed_resolution(1)
+        last = app.cycle_resolution(1)
     assert last == starting  # a full lap forward returns to the starting resolution
 
-    back = app.cycle_windowed_resolution(-1)
+    back = app.cycle_resolution(-1)
     assert back == options[(options.index(starting) - 1) % len(options)]
 
 

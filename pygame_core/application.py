@@ -7,7 +7,7 @@ from pygame import mixer
 from pygame_core.mouse import Mouse
 
 # Common desktop resolutions offered by a windowed-mode resolution picker
-# (available_windowed_resolutions() filters this down to what fits the
+# (available_resolutions() filters this down to what fits the
 # screen). 16:9/16:10 only -- covers the vast majority of desktop monitors.
 COMMON_RESOLUTIONS: tuple[tuple[int, int], ...] = (
     (1024, 576), (1152, 648), (1280, 720), (1280, 800), (1366, 768),
@@ -28,7 +28,7 @@ class Application:
         self._fps = fps
         self._is_in_debug_mode = False
         self._window_mode = "windowed"  # overwritten below by full_screen()
-        self._windowed_resolution_override: tuple[int, int] | None = None
+        self._resolution_override: tuple[int, int] | None = None
         # No longer a "design/authoring resolution" -- just the preferred
         # default *windowed* size before the player ever picks one explicitly
         # (see _windowed_physical_size()). The logical canvas (self.window)
@@ -159,13 +159,13 @@ class Application:
     def _is_fullscreen(self) -> bool:
         """True only for exclusive FULLSCREEN -- kept as a read-only alias
         of `_window_mode` for existing callers that only care about the
-        fullscreen/not-fullscreen distinction (e.g. windowed_resolution
+        fullscreen/not-fullscreen distinction (e.g. resolution
         picking, which treats borderless the same as windowed)."""
         return self._window_mode == "fullscreen"
 
     def _windowed_physical_size(self) -> tuple[int, int]:
-        if self._windowed_resolution_override is not None:
-            return self._windowed_resolution_override
+        if self._resolution_override is not None:
+            return self._resolution_override
         # Leave headroom for window chrome (title bar/borders) and never
         # upscale past the preferred windowed size -- cap the shrink factor at 1.0.
         margin = 0.8
@@ -176,7 +176,7 @@ class Application:
         )
         return (round(self.minimized_width * fit), round(self.minimized_height * fit))
 
-    def available_windowed_resolutions(self) -> list[tuple[int, int]]:
+    def available_resolutions(self) -> list[tuple[int, int]]:
         """Common resolutions that fit this screen with room to spare for
         window chrome (same margin _windowed_physical_size() uses when there's
         no explicit choice), plus whatever's currently selected so there's
@@ -185,25 +185,25 @@ class Application:
         max_width = margin * self.full_screen_width
         max_height = margin * self.full_screen_height
         fitting = {r for r in COMMON_RESOLUTIONS if r[0] <= max_width and r[1] <= max_height}
-        fitting.add(self.windowed_resolution)
+        fitting.add(self.resolution)
         return sorted(fitting)
 
     def _auto_windowed_physical_size(self) -> tuple[int, int]:
-        override, self._windowed_resolution_override = self._windowed_resolution_override, None
+        override, self._resolution_override = self._resolution_override, None
         try:
             return self._windowed_physical_size()
         finally:
-            self._windowed_resolution_override = override
+            self._resolution_override = override
 
     @property
-    def windowed_resolution(self) -> tuple[int, int]:
+    def resolution(self) -> tuple[int, int]:
         """The physical size minimize() will use right now -- either an
-        explicit pick from set_windowed_resolution()/cycle_windowed_resolution(),
+        explicit pick from set_resolution()/cycle_resolution(),
         or the automatic best-fit size. Useful for a settings label to show
         the current selection even before the player has ever gone windowed."""
-        return self._windowed_resolution_override or self._auto_windowed_physical_size()
+        return self._resolution_override or self._auto_windowed_physical_size()
 
-    def set_windowed_resolution(self, size: tuple[int, int]) -> None:
+    def set_resolution(self, size: tuple[int, int]) -> None:
         """Explicitly choose the physical window size minimize() uses,
         overriding the automatic best-fit calculation. Window mode and
         resolution are independent settings -- picking a resolution never
@@ -212,26 +212,26 @@ class Application:
         (both always the native monitor resolution, unaffected by this),
         the pick is just remembered for whenever windowed mode is next
         entered, via F11 or the window-mode setting."""
-        self._windowed_resolution_override = size
+        self._resolution_override = size
         if self._window_mode == "windowed":
             self.minimize()
 
-    def clear_windowed_resolution_override(self) -> None:
-        """Drop any explicit pick, reverting windowed_resolution to the
+    def clear_resolution_override(self) -> None:
+        """Drop any explicit pick, reverting resolution to the
         automatic best-fit calculation. Doesn't switch mode or resize the
         window itself -- pair with minimize() (or leave it for the next
         minimize()/F11 press) if the change should be visible immediately."""
-        self._windowed_resolution_override = None
+        self._resolution_override = None
 
-    def cycle_windowed_resolution(self, step: int = 1) -> tuple[int, int]:
-        """Advance through available_windowed_resolutions() by `step`
+    def cycle_resolution(self, step: int = 1) -> tuple[int, int]:
+        """Advance through available_resolutions() by `step`
         (wraps around) and apply the result. Returns the newly selected size
         -- the return value is what a resolution-cycler label should show."""
-        options = self.available_windowed_resolutions()
-        current = self.windowed_resolution
+        options = self.available_resolutions()
+        current = self.resolution
         index = options.index(current) if current in options else 0
         new_size = options[(index + step) % len(options)]
-        self.set_windowed_resolution(new_size)
+        self.set_resolution(new_size)
         return new_size
 
     def _sync_mouse_scale(self) -> None:
